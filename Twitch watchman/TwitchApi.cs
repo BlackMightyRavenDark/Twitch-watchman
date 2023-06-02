@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Specialized;
+using System.Deployment.Application;
 using System.IO;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using static Twitch_watchman.Utils;
 
@@ -41,7 +44,7 @@ namespace Twitch_watchman
         /// <summary>
         /// WARNING!!! Do not use this body if you are signed in!!!
         /// </summary>
-        public static JObject GenerateChannelTokenRequestBody(string userLogin)
+        public static JArray GenerateChannelTokenRequestBody(string userLogin)
         {
             const string hashValue = "0828119ded1c13477966434e15800ff57ddacf13ba1911c129dc2200705b0712";
             JObject jPersistedQuery = new JObject();
@@ -56,14 +59,15 @@ namespace Twitch_watchman
             jVariables["login"] = userLogin;
             jVariables["isVod"] = false;
             jVariables["vodID"] = "";
-            jVariables["playerType"] = "embed";
+            jVariables["playerType"] = "site";
 
             JObject json = new JObject();
             json["operationName"] = "PlaybackAccessToken";
             json.Add(new JProperty("extensions", jExtensions));
             json.Add(new JProperty("variables", jVariables));
 
-            return json;
+            JArray jsonArr = new JArray() { json };
+            return jsonArr;
         }
 
         public static string GetUserInfoRequestUrl_Helix(string userLogin)
@@ -80,17 +84,44 @@ namespace Twitch_watchman
 
         public int GetChannelAccessToken(string channelName, out string response)
         {
-            JObject body = GenerateChannelTokenRequestBody(channelName);
-            int errorCode = HttpsPost(TWITCH_GQL_API_URL, body.ToString(), out response);
+            response = null;
+            JArray body = GenerateChannelTokenRequestBody(channelName);
+            TwitchClientIntegrity integrity = new TwitchClientIntegrity();
+            int errorCode = integrity.Update(body);
+            if (errorCode == 200)
+            {
+                NameValueCollection headers = new NameValueCollection();
+                headers.Add("User-Agent", USER_AGENT);
+                headers.Add("Host", "gql.twitch.tv");
+                headers.Add("Client-ID", TWITCH_CLIENT_ID_PRIVATE);
+                headers.Add("Client-Session-Id", integrity.DeviceId.ToString());
+                headers.Add("Client-Integrity", integrity.Token);
+
+                errorCode = HttpsPost(TWITCH_GQL_API_URL, body.ToString(), headers, out response);
+            }
             return errorCode;
         }
 
         public void ParseChannelToken(string unparsedChannelToken, out string token, out string signature)
         {
-            JObject json = JObject.Parse(unparsedChannelToken);
-            JObject j = json.Value<JObject>("data").Value<JObject>("streamPlaybackAccessToken");
-            token = Uri.EscapeDataString(j.Value<string>("value"));
-            signature = j.Value<string>("signature");
+            JArray json = JArray.Parse(unparsedChannelToken);
+            if (json.Count > 0)
+            {
+                JObject jData = json[0].Value<JObject>("data");
+                if (jData != null)
+                {
+                    JObject jToken = jData.Value<JObject>("streamPlaybackAccessToken");
+                    if (jToken != null)
+                    {
+                        token = Uri.EscapeDataString(jToken.Value<string>("value"));
+                        signature = jToken.Value<string>("signature");
+                        return;
+                    }
+                }
+            }
+
+            token = null;
+            signature = null;
         }
 
         public int GetLiveStreamManifestUrl(string channelName, out string manifestUrl)
@@ -111,7 +142,7 @@ namespace Twitch_watchman
         }
 
         public int GetUserInfo_Helix(string channelName,
-                             out TwitchUserInfo userInfo, out string errorMessage)
+            out TwitchUserInfo userInfo, out string errorMessage)
         {
             userInfo = null;
             if (string.IsNullOrEmpty(channelName) || string.IsNullOrWhiteSpace(channelName))
@@ -258,7 +289,7 @@ namespace Twitch_watchman
     public sealed class TwitchHelixOauthToken
     {
         public const string TWITCH_HELIX_OAUTH_TOKEN_URL_TEMPLATE = "https://id.twitch.tv/oauth2/token?client_id={0}&" +
-                      "client_secret={1}&grant_type=client_credentials";
+            "client_secret={1}&grant_type=client_credentials";
         public const string TWITCH_CLIENT_SECRET = "srr2yi260t15ir6w0wq5blir22i9pq";
 
         public string AccessToken { get; private set; }
@@ -290,6 +321,37 @@ namespace Twitch_watchman
                     long expiresIn = j.Value<long>("expires_in");
                     ExpireDate = DateTime.Now.Add(TimeSpan.FromSeconds(expiresIn));
                 }
+            }
+            return errorCode;
+        }
+    }
+
+    public sealed class TwitchClientIntegrity
+    {
+        public string Token { get; private set; }
+        public long Expiration { get; private set; } = -1L;
+        public string RequestId { get; private set; }
+        public Guid DeviceId { get; private set; }
+
+        public const string INTEGRITY_API_URL = "https://gql.twitch.tv/integrity";
+
+        public int Update(JArray requestBody)
+        {
+            DeviceId = Guid.NewGuid();
+
+            NameValueCollection headers = new NameValueCollection();
+            headers.Add("User-Agent", USER_AGENT);
+            headers.Add("Host", "gql.twitch.tv");
+            headers.Add("Client-ID", TwitchApi.TWITCH_CLIENT_ID_PRIVATE);
+            headers.Add("X-Device-id", DeviceId.ToString());
+
+            int errorCode = HttpsPost(INTEGRITY_API_URL, requestBody.ToString(), headers, out string response);
+            if (errorCode == 200)
+            {
+                JObject j = JObject.Parse(response);
+                Token = j.Value<string>("token");
+                Expiration = j.Value<long>("expiration");
+                RequestId = j.Value<string>("request_id");
             }
             return errorCode;
         }

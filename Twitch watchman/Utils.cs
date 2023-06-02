@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
-using static Twitch_watchman.TwitchApi;
 
 namespace Twitch_watchman
 {
@@ -18,6 +19,8 @@ namespace Twitch_watchman
 
         public static List<string> channelNames = new List<string>();
         public static MainConfiguration config;
+
+        public const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0";
 
         public static string FormatFileName(string fmt, StreamItem streamItem)
         {
@@ -90,7 +93,7 @@ namespace Twitch_watchman
 
         public static int DownloadString(string url, out string resultString)
         {
-            FileDownloader d = new FileDownloader() { Url = url};
+            FileDownloader d = new FileDownloader() { Url = url };
             return d.DownloadString(out resultString);
         }
 
@@ -125,16 +128,30 @@ namespace Twitch_watchman
             return 400;
         }
 
-        public static int HttpsPost(string url, string body, out string responseString)
+        public static int HttpsPost(string url, string body, NameValueCollection headers, out string responseString)
         {
             responseString = "Client error";
             int res = 400;
             try
             {
                 HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
-                httpWebRequest.ContentType = "application/json";
-                httpWebRequest.Headers.Add("Client-ID", TWITCH_CLIENT_ID_PRIVATE);
+                if (!string.IsNullOrEmpty(body))
+                {
+                    byte[] buffer = Encoding.ASCII.GetBytes(body);
+                    httpWebRequest.ContentLength = buffer.Length;
+                }
+                else
+                {
+                    httpWebRequest.ContentLength = 0;
+                }
+
+                if (headers != null)
+                {
+                    SetRequestHeaders(httpWebRequest, headers);
+                }
+
                 httpWebRequest.Method = "POST";
+
                 using (StreamWriter streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
                 {
                     streamWriter.Write(body);
@@ -164,6 +181,77 @@ namespace Twitch_watchman
                 res = ex.HResult;
             }
             return res;
+        }
+
+        public static void SetRequestHeaders(HttpWebRequest request, NameValueCollection headers)
+        {
+            request.Headers.Clear();
+            for (int i = 0; i < headers.Count; ++i)
+            {
+                string headerName = headers.GetKey(i);
+                string headerValue = headers.Get(i);
+                string headerNameLowercased = headerName.ToLower();
+
+                //TODO: Complete headers support.
+                if (headerNameLowercased.Equals("accept"))
+                {
+                    request.Accept = headerValue;
+                    continue;
+                }
+                else if (headerNameLowercased.Equals("user-agent"))
+                {
+                    request.UserAgent = headerValue;
+                    continue;
+                }
+                else if (headerNameLowercased.Equals("referer"))
+                {
+                    request.Referer = headerValue;
+                    continue;
+                }
+                else if (headerNameLowercased.Equals("host"))
+                {
+                    request.Host = headerValue;
+                    continue;
+                }
+                else if (headerNameLowercased.Equals("content-type"))
+                {
+                    request.ContentType = headerValue;
+                    continue;
+                }
+                else if (headerNameLowercased.Equals("content-length"))
+                {
+                    if (long.TryParse(headerValue, out long length))
+                    {
+                        request.ContentLength = length;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Can't parse value of \"Content-Length\" header!");
+                    }
+                    continue;
+                }
+                else if (headerNameLowercased.Equals("connection"))
+                {
+                    System.Diagnostics.Debug.WriteLine("The \"Connection\" header is not supported yet.");
+                    continue;
+                }
+                else if (headerNameLowercased.Equals("range"))
+                {
+                    continue;
+                }
+                else if (headerNameLowercased.Equals("if-modified-since"))
+                {
+                    System.Diagnostics.Debug.WriteLine("The \"If-Modified-Since\" header is not supported yet.");
+                    continue;
+                }
+                else if (headerNameLowercased.Equals("transfer-encoding"))
+                {
+                    System.Diagnostics.Debug.WriteLine("The \"Transfer-Encoding\" header is not supported yet.");
+                    continue;
+                }
+
+                request.Headers.Add(headerName, headerValue);
+            }
         }
 
         public static DateTime JsonStringToDateTime(string t, string fmt = "MM/dd/yyyy HH:mm:ss")

@@ -8,13 +8,14 @@ using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
+using HlsDumpLib;
 
 namespace Twitch_watchman
 {
     public static class Utils
     {
         public const string FILENAME_FORMAT_DEFAULT = 
-            "ffmpeg_twitch_<channelName>_<year>-<month>-<day>_<hour>h<minute>m<second>s<millisecond>z";
+            "hlsdump_twitch_<channelName>_<year>-<month>-<day>_<hour>h<minute>m<second>s<millisecond>ms";
         public const int MAX_LOG_COUNT = 1000;
 
         public static List<string> channelNames = new List<string>();
@@ -33,7 +34,7 @@ namespace Twitch_watchman
                     .Replace("<hour>", LeadZero(now.Hour))
                     .Replace("<minute>", LeadZero(now.Minute))
                     .Replace("<second>", LeadZero(now.Second))
-                    .Replace("<millisecond>", now.Millisecond.ToString().PadLeft(4, '0'))
+                    .Replace("<millisecond>", now.Millisecond.ToString().PadLeft(3, '0'))
                 : now.ToString();
             return t;
         }
@@ -41,32 +42,6 @@ namespace Twitch_watchman
         public static string LeadZero(int n)
         {
             return n < 10 ? $"0{n}" : n.ToString();
-        }
-
-        public static void LaunchFfmpeg(StreamItem streamItem)
-        {
-            string trimmedFilePath = streamItem.DumpingFilePath.Substring(0, streamItem.DumpingFilePath.LastIndexOf("."));
-            for (int rec = 1; rec <= streamItem.CopiesCount; ++rec)
-            {
-                string destFilePath = rec == 1 ? streamItem.DumpingFilePath : $"{trimmedFilePath}_{rec}.ts";
-                LaunchFfmpeg(streamItem.PlaylistUrl, destFilePath);
-            }
-        }
-
-        public static bool LaunchFfmpeg(string url, string dumpingFilePath)
-        {
-            System.Diagnostics.Process process = new System.Diagnostics.Process();
-            string dir = Path.GetDirectoryName(config.FfmpegPath);
-            if (!string.IsNullOrEmpty(dir) && !string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
-            {
-                process.StartInfo.WorkingDirectory = dir;
-            }
-            string ffmpegName = Path.GetFileName(config.FfmpegPath);
-            string cmd = $"/k {ffmpegName} -i {url} -c copy \"{dumpingFilePath}\"";
-
-            process.StartInfo.FileName = "cmd.exe";
-            process.StartInfo.Arguments = cmd;
-            return process.Start();
         }
 
         public static long GetFileSize(string filePath)
@@ -343,11 +318,12 @@ namespace Twitch_watchman
         public string FilePath { get; private set; }
         public string DownloadingDirPath { get; set; }
         public string FileNameFormat { get; set; }
-        public string FfmpegPath { get; set; }
+        public string ChannelListFilePath { get; set; }
         public bool SaveStreamInfo { get; set; }
+        public bool SaveChunksInfo { get; set; }
+        public bool StopIfPlaylistLost { get; set; }
         public int CheckingIntervalInactive { get; set; }
         public int CheckingIntervalActive { get; set; }
-        public string StreamListFilePath { get; set; }
 
         public delegate void SavingDelegate(object sender, JObject root);
         public delegate void LoadingDelegate(object sender, JObject root);
@@ -363,11 +339,12 @@ namespace Twitch_watchman
 
         public void LoadDefaults()
         {
-            StreamListFilePath = SelfDirPath + "tw_channelList.json";
+            ChannelListFilePath = SelfDirPath + "tw_channelList.json";
             DownloadingDirPath = SelfDirPath;
-            FfmpegPath = "FFMPEG.EXE";
             FileNameFormat = Utils.FILENAME_FORMAT_DEFAULT;
             SaveStreamInfo = true;
+            SaveChunksInfo = true;
+            StopIfPlaylistLost = true;
             CheckingIntervalInactive = 3;
             CheckingIntervalActive = 10;
         }
@@ -403,14 +380,11 @@ namespace Twitch_watchman
         public bool IsChecking { get; set; } = false;
         public int TimerRemaining { get; set; } = 10;
         public string Title { get; set; }
-        public string ImageUrl { get; set; }
-        public int CopiesCount { get; set; } = 1;
-        public bool KeepAlive { get; set; } = true;
         public DateTime DateServer { get; set; } = DateTime.MinValue;
         public DateTime DateLocal { get; set; } = DateTime.MinValue;
         public bool IsImportant { get; set; } = false;
-        public bool IsStreamActive => !string.IsNullOrEmpty(DumpingFilePath) && !string.IsNullOrEmpty(DumpingFilePath);
-        public StreamItem Self => this;
+        public bool IsStreamActive => Dumper != null;
+        public HlsDumper Dumper { get; set; }
 
         public StreamItem(string channelName)
         {

@@ -34,32 +34,35 @@ namespace Twitch_watchman
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.listViewStreams = new System.Windows.Forms.ListView();
-            this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader10 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderChannelName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderTimer = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderDumpingFile = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderFileSize = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderDelay = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderNewChunks = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderProcessedChunks = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderFirstChunkId = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderLostChunks = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderDumpStartedDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderPlaylistUrl = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.btnAddNewStream = new System.Windows.Forms.Button();
             this.btnCheckAll = new System.Windows.Forms.Button();
-            this.chkTimerEnabled = new System.Windows.Forms.CheckBox();
+            this.checkBoxTimerEnabled = new System.Windows.Forms.CheckBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.chkSaveStreamInfo = new System.Windows.Forms.CheckBox();
+            this.checkBoxStopIfPlaylistLost = new System.Windows.Forms.CheckBox();
+            this.checkBoxSaveChunksInfo = new System.Windows.Forms.CheckBox();
+            this.checkBoxSaveStreamInfo = new System.Windows.Forms.CheckBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.numericUpDownTimerIntervalActive = new System.Windows.Forms.NumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
             this.numericUpDownTimerIntervalInactive = new System.Windows.Forms.NumericUpDown();
             this.label5 = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.btnSetDefaultFilNameFormat = new System.Windows.Forms.Button();
+            this.btnSetDefaultFileNameFormat = new System.Windows.Forms.Button();
             this.textBoxFileNameFormat = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
-            this.btnBrowseFfmpeg = new System.Windows.Forms.Button();
             this.btnBrowseDownloadingDirectory = new System.Windows.Forms.Button();
             this.textBoxDownloadingDir = new System.Windows.Forms.TextBox();
-            this.textBoxFfmpegPath = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.listViewLog = new System.Windows.Forms.ListView();
@@ -71,15 +74,15 @@ namespace Twitch_watchman
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.miCheckChannelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.miEditChannelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.miRhemoveChannelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.miRemoveChannelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.miCopyChannelNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.miCopyPlaylistUrlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.miOpenChannelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.miImportantChannelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.miClearDumpInfoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
-            this.miKeepAliveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.miBrowseForKeepAliveFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.miStopDumpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -111,7 +114,7 @@ namespace Twitch_watchman
             this.tabPage1.Controls.Add(this.listViewStreams);
             this.tabPage1.Controls.Add(this.btnAddNewStream);
             this.tabPage1.Controls.Add(this.btnCheckAll);
-            this.tabPage1.Controls.Add(this.chkTimerEnabled);
+            this.tabPage1.Controls.Add(this.checkBoxTimerEnabled);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
@@ -126,13 +129,17 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.listViewStreams.BackColor = System.Drawing.SystemColors.Control;
             this.listViewStreams.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.columnHeader1,
-            this.columnHeader2,
-            this.columnHeader3,
-            this.columnHeader4,
-            this.columnHeader5,
-            this.columnHeader6,
-            this.columnHeader10});
+            this.columnHeaderChannelName,
+            this.columnHeaderTimer,
+            this.columnHeaderDumpingFile,
+            this.columnHeaderFileSize,
+            this.columnHeaderDelay,
+            this.columnHeaderNewChunks,
+            this.columnHeaderProcessedChunks,
+            this.columnHeaderFirstChunkId,
+            this.columnHeaderLostChunks,
+            this.columnHeaderDumpStartedDate,
+            this.columnHeaderPlaylistUrl});
             this.listViewStreams.FullRowSelect = true;
             this.listViewStreams.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.listViewStreams.HideSelection = false;
@@ -151,42 +158,62 @@ namespace Twitch_watchman
             this.listViewStreams.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.listViewStreams_MouseDoubleClick);
             this.listViewStreams.MouseUp += new System.Windows.Forms.MouseEventHandler(this.listViewStreams_MouseUp);
             // 
-            // columnHeader1
+            // columnHeaderChannelName
             // 
-            this.columnHeader1.Text = "Канал";
-            this.columnHeader1.Width = 100;
+            this.columnHeaderChannelName.Text = "Канал";
+            this.columnHeaderChannelName.Width = 100;
             // 
-            // columnHeader2
+            // columnHeaderTimer
             // 
-            this.columnHeader2.Text = "Таймер";
-            this.columnHeader2.Width = 80;
+            this.columnHeaderTimer.Text = "Таймер";
+            this.columnHeaderTimer.Width = 80;
             // 
-            // columnHeader3
+            // columnHeaderDumpingFile
             // 
-            this.columnHeader3.Text = "Дампинг файл";
-            this.columnHeader3.Width = 250;
+            this.columnHeaderDumpingFile.Text = "Дампинг файл";
+            this.columnHeaderDumpingFile.Width = 250;
             // 
-            // columnHeader4
+            // columnHeaderFileSize
             // 
-            this.columnHeader4.Text = "Размер файла";
-            this.columnHeader4.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.columnHeader4.Width = 100;
+            this.columnHeaderFileSize.Text = "Размер файла";
+            this.columnHeaderFileSize.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeaderFileSize.Width = 100;
             // 
-            // columnHeader5
+            // columnHeaderDelay
             // 
-            this.columnHeader5.Text = "Копии";
-            this.columnHeader5.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.columnHeader5.Width = 50;
+            this.columnHeaderDelay.Text = "Задержка";
+            this.columnHeaderDelay.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.columnHeaderDelay.Width = 100;
             // 
-            // columnHeader6
+            // columnHeaderNewChunks
             // 
-            this.columnHeader6.Text = "Дата батона";
-            this.columnHeader6.Width = 120;
+            this.columnHeaderNewChunks.Text = "Новые чанки";
+            this.columnHeaderNewChunks.Width = 80;
             // 
-            // columnHeader10
+            // columnHeaderProcessedChunks
             // 
-            this.columnHeader10.Text = "Ссылка";
-            this.columnHeader10.Width = 400;
+            this.columnHeaderProcessedChunks.Text = "Обработано чанков";
+            this.columnHeaderProcessedChunks.Width = 80;
+            // 
+            // columnHeaderFirstChunkId
+            // 
+            this.columnHeaderFirstChunkId.Text = "Первый чанк";
+            this.columnHeaderFirstChunkId.Width = 80;
+            // 
+            // columnHeaderLostChunks
+            // 
+            this.columnHeaderLostChunks.Text = "Потеряно чанков";
+            this.columnHeaderLostChunks.Width = 100;
+            // 
+            // columnHeaderDumpStartedDate
+            // 
+            this.columnHeaderDumpStartedDate.Text = "Дампинг начат";
+            this.columnHeaderDumpStartedDate.Width = 120;
+            // 
+            // columnHeaderPlaylistUrl
+            // 
+            this.columnHeaderPlaylistUrl.Text = "Ссылка на плейлист";
+            this.columnHeaderPlaylistUrl.Width = 400;
             // 
             // btnAddNewStream
             // 
@@ -209,41 +236,67 @@ namespace Twitch_watchman
             this.btnCheckAll.UseVisualStyleBackColor = true;
             this.btnCheckAll.Click += new System.EventHandler(this.btnCheckAll_Click);
             // 
-            // chkTimerEnabled
+            // checkBoxTimerEnabled
             // 
-            this.chkTimerEnabled.AutoSize = true;
-            this.chkTimerEnabled.Location = new System.Drawing.Point(107, 10);
-            this.chkTimerEnabled.Name = "chkTimerEnabled";
-            this.chkTimerEnabled.Size = new System.Drawing.Size(65, 17);
-            this.chkTimerEnabled.TabIndex = 2;
-            this.chkTimerEnabled.Text = "Таймер";
-            this.chkTimerEnabled.UseVisualStyleBackColor = true;
-            this.chkTimerEnabled.CheckedChanged += new System.EventHandler(this.chkTimerEnabled_CheckedChanged);
+            this.checkBoxTimerEnabled.AutoSize = true;
+            this.checkBoxTimerEnabled.Location = new System.Drawing.Point(107, 10);
+            this.checkBoxTimerEnabled.Name = "checkBoxTimerEnabled";
+            this.checkBoxTimerEnabled.Size = new System.Drawing.Size(65, 17);
+            this.checkBoxTimerEnabled.TabIndex = 2;
+            this.checkBoxTimerEnabled.Text = "Таймер";
+            this.checkBoxTimerEnabled.UseVisualStyleBackColor = true;
+            this.checkBoxTimerEnabled.CheckedChanged += new System.EventHandler(this.checkBoxTimerEnabled_CheckedChanged);
             // 
             // tabPage2
             // 
             this.tabPage2.AutoScroll = true;
             this.tabPage2.BackColor = System.Drawing.SystemColors.Control;
-            this.tabPage2.Controls.Add(this.chkSaveStreamInfo);
+            this.tabPage2.Controls.Add(this.checkBoxStopIfPlaylistLost);
+            this.tabPage2.Controls.Add(this.checkBoxSaveChunksInfo);
+            this.tabPage2.Controls.Add(this.checkBoxSaveStreamInfo);
             this.tabPage2.Controls.Add(this.groupBox3);
             this.tabPage2.Controls.Add(this.groupBox2);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
             this.tabPage2.Size = new System.Drawing.Size(899, 163);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Настройки";
             // 
-            // chkSaveStreamInfo
+            // checkBoxStopIfPlaylistLost
             // 
-            this.chkSaveStreamInfo.AutoSize = true;
-            this.chkSaveStreamInfo.Location = new System.Drawing.Point(21, 252);
-            this.chkSaveStreamInfo.Name = "chkSaveStreamInfo";
-            this.chkSaveStreamInfo.Size = new System.Drawing.Size(202, 17);
-            this.chkSaveStreamInfo.TabIndex = 7;
-            this.chkSaveStreamInfo.Text = "Сохранять информацию о сттриме";
-            this.chkSaveStreamInfo.UseVisualStyleBackColor = true;
-            this.chkSaveStreamInfo.CheckedChanged += new System.EventHandler(this.chkSaveStreamInfo_CheckedChanged);
+            this.checkBoxStopIfPlaylistLost.AutoSize = true;
+            this.checkBoxStopIfPlaylistLost.Location = new System.Drawing.Point(420, 201);
+            this.checkBoxStopIfPlaylistLost.Name = "checkBoxStopIfPlaylistLost";
+            this.checkBoxStopIfPlaylistLost.Size = new System.Drawing.Size(314, 17);
+            this.checkBoxStopIfPlaylistLost.TabIndex = 9;
+            this.checkBoxStopIfPlaylistLost.Text = "Остановить дампинг, если плейлист больше недоступен";
+            this.toolTip1.SetToolTip(this.checkBoxStopIfPlaylistLost, "Иначе, остановка после 5 ошибок. Нельзя изменить для активных трансляций!");
+            this.checkBoxStopIfPlaylistLost.UseVisualStyleBackColor = true;
+            this.checkBoxStopIfPlaylistLost.CheckedChanged += new System.EventHandler(this.checkBoxStopIfPlaylistLost_CheckedChanged);
+            // 
+            // checkBoxSaveChunksInfo
+            // 
+            this.checkBoxSaveChunksInfo.AutoSize = true;
+            this.checkBoxSaveChunksInfo.Location = new System.Drawing.Point(211, 201);
+            this.checkBoxSaveChunksInfo.Name = "checkBoxSaveChunksInfo";
+            this.checkBoxSaveChunksInfo.Size = new System.Drawing.Size(194, 17);
+            this.checkBoxSaveChunksInfo.TabIndex = 8;
+            this.checkBoxSaveChunksInfo.Text = "Сохранять информацию о чанках";
+            this.toolTip1.SetToolTip(this.checkBoxSaveChunksInfo, "Нельзя изменить для активных трансляций!");
+            this.checkBoxSaveChunksInfo.UseVisualStyleBackColor = true;
+            this.checkBoxSaveChunksInfo.CheckedChanged += new System.EventHandler(this.checkBoxSaveChunksInfo_CheckedChanged);
+            // 
+            // checkBoxSaveStreamInfo
+            // 
+            this.checkBoxSaveStreamInfo.AutoSize = true;
+            this.checkBoxSaveStreamInfo.Location = new System.Drawing.Point(3, 201);
+            this.checkBoxSaveStreamInfo.Name = "checkBoxSaveStreamInfo";
+            this.checkBoxSaveStreamInfo.Size = new System.Drawing.Size(197, 17);
+            this.checkBoxSaveStreamInfo.TabIndex = 7;
+            this.checkBoxSaveStreamInfo.Text = "Сохранять информацию о стриме";
+            this.toolTip1.SetToolTip(this.checkBoxSaveStreamInfo, "Нельзя изменить для активных трансляций!");
+            this.checkBoxSaveStreamInfo.UseVisualStyleBackColor = true;
+            this.checkBoxSaveStreamInfo.CheckedChanged += new System.EventHandler(this.checkBoxSaveStreamInfo_CheckedChanged);
             // 
             // groupBox3
             // 
@@ -253,9 +306,9 @@ namespace Twitch_watchman
             this.groupBox3.Controls.Add(this.label3);
             this.groupBox3.Controls.Add(this.numericUpDownTimerIntervalInactive);
             this.groupBox3.Controls.Add(this.label5);
-            this.groupBox3.Location = new System.Drawing.Point(6, 165);
+            this.groupBox3.Location = new System.Drawing.Point(3, 114);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(836, 81);
+            this.groupBox3.Size = new System.Drawing.Size(842, 81);
             this.groupBox3.TabIndex = 6;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Частота проверки";
@@ -328,67 +381,53 @@ namespace Twitch_watchman
             // 
             this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBox2.Controls.Add(this.btnSetDefaultFilNameFormat);
+            this.groupBox2.Controls.Add(this.btnSetDefaultFileNameFormat);
             this.groupBox2.Controls.Add(this.textBoxFileNameFormat);
             this.groupBox2.Controls.Add(this.label6);
-            this.groupBox2.Controls.Add(this.btnBrowseFfmpeg);
             this.groupBox2.Controls.Add(this.btnBrowseDownloadingDirectory);
             this.groupBox2.Controls.Add(this.textBoxDownloadingDir);
-            this.groupBox2.Controls.Add(this.textBoxFfmpegPath);
-            this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Controls.Add(this.label1);
-            this.groupBox2.Location = new System.Drawing.Point(6, 6);
+            this.groupBox2.Location = new System.Drawing.Point(3, 3);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(836, 153);
+            this.groupBox2.Size = new System.Drawing.Size(842, 105);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Файлы и папки";
             // 
-            // btnSetDefaultFilNameFormat
+            // btnSetDefaultFileNameFormat
             // 
-            this.btnSetDefaultFilNameFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSetDefaultFilNameFormat.Location = new System.Drawing.Point(721, 123);
-            this.btnSetDefaultFilNameFormat.Name = "btnSetDefaultFilNameFormat";
-            this.btnSetDefaultFilNameFormat.Size = new System.Drawing.Size(109, 23);
-            this.btnSetDefaultFilNameFormat.TabIndex = 8;
-            this.btnSetDefaultFilNameFormat.Text = "Вернуть как было";
-            this.btnSetDefaultFilNameFormat.UseVisualStyleBackColor = true;
-            this.btnSetDefaultFilNameFormat.Click += new System.EventHandler(this.btnSetDefaultFilNameFormat_Click);
+            this.btnSetDefaultFileNameFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnSetDefaultFileNameFormat.Location = new System.Drawing.Point(727, 74);
+            this.btnSetDefaultFileNameFormat.Name = "btnSetDefaultFileNameFormat";
+            this.btnSetDefaultFileNameFormat.Size = new System.Drawing.Size(109, 23);
+            this.btnSetDefaultFileNameFormat.TabIndex = 8;
+            this.btnSetDefaultFileNameFormat.Text = "Вернуть как было";
+            this.btnSetDefaultFileNameFormat.UseVisualStyleBackColor = true;
+            this.btnSetDefaultFileNameFormat.Click += new System.EventHandler(this.btnSetDefaultFileNameFormat_Click);
             // 
             // textBoxFileNameFormat
             // 
             this.textBoxFileNameFormat.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxFileNameFormat.Location = new System.Drawing.Point(15, 125);
+            this.textBoxFileNameFormat.Location = new System.Drawing.Point(15, 76);
             this.textBoxFileNameFormat.Name = "textBoxFileNameFormat";
-            this.textBoxFileNameFormat.Size = new System.Drawing.Size(700, 20);
+            this.textBoxFileNameFormat.Size = new System.Drawing.Size(706, 20);
             this.textBoxFileNameFormat.TabIndex = 7;
             this.textBoxFileNameFormat.Leave += new System.EventHandler(this.textBoxFileNameFormat_Leave);
             // 
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(13, 109);
+            this.label6.Location = new System.Drawing.Point(13, 60);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(122, 13);
             this.label6.TabIndex = 6;
             this.label6.Text = "Формат имени файла:";
             // 
-            // btnBrowseFfmpeg
-            // 
-            this.btnBrowseFfmpeg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnBrowseFfmpeg.Location = new System.Drawing.Point(789, 77);
-            this.btnBrowseFfmpeg.Name = "btnBrowseFfmpeg";
-            this.btnBrowseFfmpeg.Size = new System.Drawing.Size(41, 23);
-            this.btnBrowseFfmpeg.TabIndex = 5;
-            this.btnBrowseFfmpeg.Text = "...";
-            this.btnBrowseFfmpeg.UseVisualStyleBackColor = true;
-            this.btnBrowseFfmpeg.Click += new System.EventHandler(this.btnBrowseFfmpeg_Click);
-            // 
             // btnBrowseDownloadingDirectory
             // 
             this.btnBrowseDownloadingDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(789, 33);
+            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(795, 35);
             this.btnBrowseDownloadingDirectory.Name = "btnBrowseDownloadingDirectory";
             this.btnBrowseDownloadingDirectory.Size = new System.Drawing.Size(41, 23);
             this.btnBrowseDownloadingDirectory.TabIndex = 4;
@@ -400,30 +439,11 @@ namespace Twitch_watchman
             // 
             this.textBoxDownloadingDir.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxDownloadingDir.Location = new System.Drawing.Point(16, 35);
+            this.textBoxDownloadingDir.Location = new System.Drawing.Point(16, 37);
             this.textBoxDownloadingDir.Name = "textBoxDownloadingDir";
-            this.textBoxDownloadingDir.Size = new System.Drawing.Size(767, 20);
+            this.textBoxDownloadingDir.Size = new System.Drawing.Size(773, 20);
             this.textBoxDownloadingDir.TabIndex = 0;
             this.textBoxDownloadingDir.Leave += new System.EventHandler(this.textBoxDownloadingDir_Leave);
-            // 
-            // textBoxFfmpegPath
-            // 
-            this.textBoxFfmpegPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxFfmpegPath.Location = new System.Drawing.Point(15, 79);
-            this.textBoxFfmpegPath.Name = "textBoxFfmpegPath";
-            this.textBoxFfmpegPath.Size = new System.Drawing.Size(768, 20);
-            this.textBoxFfmpegPath.TabIndex = 1;
-            this.textBoxFfmpegPath.Leave += new System.EventHandler(this.textBoxFfmpegPath_Leave);
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 63);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(119, 13);
-            this.label2.TabIndex = 3;
-            this.label2.Text = "Путь до FFMPEG.EXE:";
             // 
             // label1
             // 
@@ -496,91 +516,83 @@ namespace Twitch_watchman
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miCheckChannelToolStripMenuItem,
             this.miEditChannelToolStripMenuItem,
-            this.miRhemoveChannelToolStripMenuItem,
+            this.miRemoveChannelToolStripMenuItem,
             this.miCopyChannelNameToolStripMenuItem,
+            this.miCopyPlaylistUrlToolStripMenuItem,
             this.miOpenChannelToolStripMenuItem,
             this.toolStripMenuItem1,
             this.miImportantChannelToolStripMenuItem,
-            this.miClearDumpInfoToolStripMenuItem,
             this.toolStripMenuItem2,
-            this.miKeepAliveToolStripMenuItem,
-            this.miBrowseForKeepAliveFileToolStripMenuItem});
+            this.miStopDumpToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(271, 232);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(289, 208);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // miCheckChannelToolStripMenuItem
             // 
             this.miCheckChannelToolStripMenuItem.Name = "miCheckChannelToolStripMenuItem";
-            this.miCheckChannelToolStripMenuItem.Size = new System.Drawing.Size(270, 24);
+            this.miCheckChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
             this.miCheckChannelToolStripMenuItem.Text = "Проверить";
             this.miCheckChannelToolStripMenuItem.Click += new System.EventHandler(this.miCheckChannelToolStripMenuItem_Click);
             // 
             // miEditChannelToolStripMenuItem
             // 
             this.miEditChannelToolStripMenuItem.Name = "miEditChannelToolStripMenuItem";
-            this.miEditChannelToolStripMenuItem.Size = new System.Drawing.Size(270, 24);
+            this.miEditChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
             this.miEditChannelToolStripMenuItem.Text = "Редактировать";
             this.miEditChannelToolStripMenuItem.Click += new System.EventHandler(this.miEditChannelToolStripMenuItem_Click);
             // 
-            // miRhemoveChannelToolStripMenuItem
+            // miRemoveChannelToolStripMenuItem
             // 
-            this.miRhemoveChannelToolStripMenuItem.Name = "miRhemoveChannelToolStripMenuItem";
-            this.miRhemoveChannelToolStripMenuItem.Size = new System.Drawing.Size(270, 24);
-            this.miRhemoveChannelToolStripMenuItem.Text = "Удалить";
-            this.miRhemoveChannelToolStripMenuItem.Click += new System.EventHandler(this.miRhemoveChannelToolStripMenuItem_Click);
+            this.miRemoveChannelToolStripMenuItem.Name = "miRemoveChannelToolStripMenuItem";
+            this.miRemoveChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miRemoveChannelToolStripMenuItem.Text = "Удалить";
+            this.miRemoveChannelToolStripMenuItem.Click += new System.EventHandler(this.miRemoveChannelToolStripMenuItem_Click);
             // 
             // miCopyChannelNameToolStripMenuItem
             // 
             this.miCopyChannelNameToolStripMenuItem.Name = "miCopyChannelNameToolStripMenuItem";
-            this.miCopyChannelNameToolStripMenuItem.Size = new System.Drawing.Size(270, 24);
+            this.miCopyChannelNameToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
             this.miCopyChannelNameToolStripMenuItem.Text = "Скопировать название канала";
             this.miCopyChannelNameToolStripMenuItem.Click += new System.EventHandler(this.miCopyChannelNameToolStripMenuItem_Click);
+            // 
+            // miCopyPlaylistUrlToolStripMenuItem
+            // 
+            this.miCopyPlaylistUrlToolStripMenuItem.Name = "miCopyPlaylistUrlToolStripMenuItem";
+            this.miCopyPlaylistUrlToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miCopyPlaylistUrlToolStripMenuItem.Text = "Скопировать ссылку на плейлист";
+            this.miCopyPlaylistUrlToolStripMenuItem.Click += new System.EventHandler(this.miCopyPlaylistUrlToolStripMenuItem_Click);
             // 
             // miOpenChannelToolStripMenuItem
             // 
             this.miOpenChannelToolStripMenuItem.Name = "miOpenChannelToolStripMenuItem";
-            this.miOpenChannelToolStripMenuItem.Size = new System.Drawing.Size(270, 24);
+            this.miOpenChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
             this.miOpenChannelToolStripMenuItem.Text = "Открыть канал";
             this.miOpenChannelToolStripMenuItem.Click += new System.EventHandler(this.miOpenChannelToolStripMenuItem_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(267, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(285, 6);
             // 
             // miImportantChannelToolStripMenuItem
             // 
             this.miImportantChannelToolStripMenuItem.Name = "miImportantChannelToolStripMenuItem";
-            this.miImportantChannelToolStripMenuItem.Size = new System.Drawing.Size(270, 24);
+            this.miImportantChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
             this.miImportantChannelToolStripMenuItem.Text = "Важный канал";
             this.miImportantChannelToolStripMenuItem.Click += new System.EventHandler(this.miImportantChannelToolStripMenuItem_Click);
-            // 
-            // miClearDumpInfoToolStripMenuItem
-            // 
-            this.miClearDumpInfoToolStripMenuItem.Name = "miClearDumpInfoToolStripMenuItem";
-            this.miClearDumpInfoToolStripMenuItem.Size = new System.Drawing.Size(270, 24);
-            this.miClearDumpInfoToolStripMenuItem.Text = "Забыть стрим";
-            this.miClearDumpInfoToolStripMenuItem.Click += new System.EventHandler(this.miClearDumpInfoToolStripMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(267, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(285, 6);
             // 
-            // miKeepAliveToolStripMenuItem
+            // miStopDumpToolStripMenuItem
             // 
-            this.miKeepAliveToolStripMenuItem.Name = "miKeepAliveToolStripMenuItem";
-            this.miKeepAliveToolStripMenuItem.Size = new System.Drawing.Size(270, 24);
-            this.miKeepAliveToolStripMenuItem.Text = "Антизависатор";
-            this.miKeepAliveToolStripMenuItem.Click += new System.EventHandler(this.miKeepAliveToolStripMenuItem_Click);
-            // 
-            // miBrowseForKeepAliveFileToolStripMenuItem
-            // 
-            this.miBrowseForKeepAliveFileToolStripMenuItem.Name = "miBrowseForKeepAliveFileToolStripMenuItem";
-            this.miBrowseForKeepAliveFileToolStripMenuItem.Size = new System.Drawing.Size(270, 24);
-            this.miBrowseForKeepAliveFileToolStripMenuItem.Text = "Выбрать файл для слежения...";
-            this.miBrowseForKeepAliveFileToolStripMenuItem.Click += new System.EventHandler(this.miBrowseForKeepAliveFileToolStripMenuItem_Click);
+            this.miStopDumpToolStripMenuItem.Name = "miStopDumpToolStripMenuItem";
+            this.miStopDumpToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miStopDumpToolStripMenuItem.Text = "Остановить дампинг";
+            this.miStopDumpToolStripMenuItem.Click += new System.EventHandler(this.miStopDumpToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -593,6 +605,7 @@ namespace Twitch_watchman
             this.MinimumSize = new System.Drawing.Size(580, 250);
             this.Name = "Form1";
             this.Text = "Twitch watchman";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.tabControl1.ResumeLayout(false);
@@ -617,22 +630,19 @@ namespace Twitch_watchman
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabPage tabPage2;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox textBoxFfmpegPath;
         private System.Windows.Forms.TextBox textBoxDownloadingDir;
         private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.Button btnBrowseFfmpeg;
         private System.Windows.Forms.Button btnBrowseDownloadingDirectory;
         private System.Windows.Forms.Timer timerCheck;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
-        private System.Windows.Forms.CheckBox chkTimerEnabled;
+        private System.Windows.Forms.CheckBox checkBoxTimerEnabled;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.NumericUpDown numericUpDownTimerIntervalInactive;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.TextBox textBoxFileNameFormat;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Button btnSetDefaultFilNameFormat;
+        private System.Windows.Forms.Button btnSetDefaultFileNameFormat;
         private System.Windows.Forms.Button btnCheckAll;
         private System.Windows.Forms.Button btnAddNewStream;
         private System.Windows.Forms.TabPage tabPage3;
@@ -648,20 +658,26 @@ namespace Twitch_watchman
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem miImportantChannelToolStripMenuItem;
         private System.Windows.Forms.ListView listViewStreams;
-        private System.Windows.Forms.ColumnHeader columnHeader1;
-        private System.Windows.Forms.ColumnHeader columnHeader2;
-        private System.Windows.Forms.ColumnHeader columnHeader3;
-        private System.Windows.Forms.ColumnHeader columnHeader4;
-        private System.Windows.Forms.ColumnHeader columnHeader5;
-        private System.Windows.Forms.ColumnHeader columnHeader6;
-        private System.Windows.Forms.ColumnHeader columnHeader10;
-        private System.Windows.Forms.ToolStripMenuItem miClearDumpInfoToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem miBrowseForKeepAliveFileToolStripMenuItem;
+        private System.Windows.Forms.ColumnHeader columnHeaderChannelName;
+        private System.Windows.Forms.ColumnHeader columnHeaderTimer;
+        private System.Windows.Forms.ColumnHeader columnHeaderDumpingFile;
+        private System.Windows.Forms.ColumnHeader columnHeaderFileSize;
+        private System.Windows.Forms.ColumnHeader columnHeaderDelay;
+        private System.Windows.Forms.ColumnHeader columnHeaderDumpStartedDate;
+        private System.Windows.Forms.ColumnHeader columnHeaderPlaylistUrl;
+        private System.Windows.Forms.ToolStripMenuItem miCopyPlaylistUrlToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
-        private System.Windows.Forms.ToolStripMenuItem miKeepAliveToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem miRhemoveChannelToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem miRemoveChannelToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem miOpenChannelToolStripMenuItem;
-        private System.Windows.Forms.CheckBox chkSaveStreamInfo;
+        private System.Windows.Forms.CheckBox checkBoxSaveStreamInfo;
         private System.Windows.Forms.ToolStripMenuItem miCopyChannelNameToolStripMenuItem;
+        private System.Windows.Forms.ColumnHeader columnHeaderNewChunks;
+        private System.Windows.Forms.ColumnHeader columnHeaderFirstChunkId;
+        private System.Windows.Forms.ColumnHeader columnHeaderLostChunks;
+        private System.Windows.Forms.ColumnHeader columnHeaderProcessedChunks;
+        private System.Windows.Forms.ToolStripMenuItem miStopDumpToolStripMenuItem;
+        private System.Windows.Forms.CheckBox checkBoxSaveChunksInfo;
+        private System.Windows.Forms.CheckBox checkBoxStopIfPlaylistLost;
+        private System.Windows.Forms.ToolTip toolTip1;
     }
 }

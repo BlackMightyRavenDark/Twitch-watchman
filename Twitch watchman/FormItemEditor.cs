@@ -6,7 +6,7 @@ namespace Twitch_watchman
     public partial class FormItemEditor : Form
     {
         public StreamItem StreamItem { get; private set; }
-        private readonly bool EditingMode;
+        private readonly bool _editingMode;
 
         public FormItemEditor(StreamItem streamItem)
         {
@@ -17,10 +17,9 @@ namespace Twitch_watchman
             {
                 textBoxChannelName.Text = streamItem.ChannelName;
                 textBoxChannelName.Enabled = false;
-                numericUpDownCopiesCount.Value = streamItem.CopiesCount;
                 checkBoxImportant.Checked = streamItem.IsImportant;
                 Text = "Настройки канала";
-                EditingMode = true;
+                _editingMode = true;
             }
             else
             {
@@ -28,15 +27,16 @@ namespace Twitch_watchman
                 {
                     textBoxChannelName.Focus();
                 };
-                EditingMode = false;
+                _editingMode = false;
             }
         }
 
         private void btnOk_Click(object sender, EventArgs e)
         {
-            string channelName = textBoxChannelName.Text;
-            if (!EditingMode)
+            if (!_editingMode)
             {
+                string channelName = textBoxChannelName.Text;
+
                 if (string.IsNullOrEmpty(channelName) || string.IsNullOrWhiteSpace(channelName))
                 {
                     MessageBox.Show("Введите название канала!", "Ошибка!",
@@ -55,9 +55,9 @@ namespace Twitch_watchman
                         MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     return;
                 }
+
                 StreamItem = new StreamItem(channelName);
             }
-            StreamItem.CopiesCount = (int)numericUpDownCopiesCount.Value;
             StreamItem.IsImportant = checkBoxImportant.Checked;
 
             DialogResult = DialogResult.OK;

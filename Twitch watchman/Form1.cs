@@ -3,8 +3,10 @@ using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
+using HlsDumpLib;
 using static Twitch_watchman.Utils;
 
 namespace Twitch_watchman
@@ -15,9 +17,15 @@ namespace Twitch_watchman
         private const int COLUMN_ID_TIMER = 1;
         private const int COLUMN_ID_FILEPATH = 2;
         private const int COLUMN_ID_FILESIZE = 3;
-        private const int COLUMN_ID_COPIES_COUNT = 4;
-        private const int COLUMN_ID_DATE = 5;
-        private const int COLUMN_ID_PLAYLIST_URL = 6;
+        private const int COLUMN_ID_DELAY = 4;
+        private const int COLUMN_ID_NEWCHUNKS = 5;
+        private const int COLUMN_ID_PROCESSEDCHUNKS = 6;
+        private const int COLUMN_ID_FIRSTCHUNKID = 7;
+        private const int COLUMN_ID_LOSTCHUNKS = 8;
+        private const int COLUMN_ID_DUMPSTARTDATE = 9;
+        private const int COLUMN_ID_PLAYLIST_URL = 10;
+
+        private bool _isClosing = false;
 
         public Form1()
         {
@@ -39,11 +47,12 @@ namespace Twitch_watchman
                     json["height"] = Height;
                 }
                 json["downloadingDirPath"] = config.DownloadingDirPath;
-                json["ffmpegPath"] = config.FfmpegPath;
                 json["fileNameFormat"] = config.FileNameFormat;
                 json["checkingIntervalInactive"] = config.CheckingIntervalInactive;
                 json["checkingIntervalActive"] = config.CheckingIntervalActive;
                 json["saveStreamInfo"] = config.SaveStreamInfo;
+                json["saveChunksInfo"] = config.SaveChunksInfo;
+                json["stopIfPlaylistLost"] = config.StopIfPlaylistLost;
             };
             config.Loading += (s, json) =>
             {
@@ -74,13 +83,6 @@ namespace Twitch_watchman
                     config.DownloadingDirPath = jt.Value<string>();
                 }
                 textBoxDownloadingDir.Text = config.DownloadingDirPath;
-
-                jt = json.Value<JToken>("ffmpegPath");
-                if (jt != null)
-                {
-                    config.FfmpegPath = jt.Value<string>();
-                }
-                textBoxFfmpegPath.Text = config.FfmpegPath;
 
                 jt = json.Value<JToken>("fileNameFormat");
                 if (jt != null)
@@ -125,17 +127,30 @@ namespace Twitch_watchman
                 {
                     config.SaveStreamInfo = jt.Value<bool>();
                 }
+
+                jt = json.Value<JToken>("saveChunksInfo");
+                if (jt != null)
+                {
+                    config.SaveChunksInfo = jt.Value<bool>();
+                }
+
+                jt = json.Value<JToken>("stopIfPlaylistLost");
+                if (jt != null)
+                {
+                    config.StopIfPlaylistLost = jt.Value<bool>();
+                }
             };
             config.Load();
             textBoxFileNameFormat.Text = config.FileNameFormat;
             numericUpDownTimerIntervalInactive.Value = config.CheckingIntervalInactive;
             numericUpDownTimerIntervalActive.Value = config.CheckingIntervalActive;
-            chkSaveStreamInfo.Checked = config.SaveStreamInfo;
+            checkBoxSaveStreamInfo.Checked = config.SaveStreamInfo;
+            checkBoxSaveChunksInfo.Checked = config.SaveChunksInfo;
+            checkBoxStopIfPlaylistLost.Checked = config.StopIfPlaylistLost;
 
-            listViewStreams.Columns[COLUMN_ID_CHANNEL_NAME].Width += 1;
-            if (File.Exists(config.StreamListFilePath))
+            if (File.Exists(config.ChannelListFilePath))
             {
-                LoadList(config.StreamListFilePath);
+                LoadChannelList(config.ChannelListFilePath);
             }
 
             string[] args = Environment.GetCommandLineArgs();
@@ -143,7 +158,7 @@ namespace Twitch_watchman
             {
                 if (s.ToLower().Equals("/enabled"))
                 {
-                    chkTimerEnabled.Checked = true;
+                    checkBoxTimerEnabled.Checked = true;
                 }
                 else if (s.ToLower().Equals("/check"))
                 {
@@ -156,16 +171,45 @@ namespace Twitch_watchman
             AddToLog(null, "Программа запущена");
         }
 
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (e.CloseReason != CloseReason.ApplicationExitCall)
+            {
+                timerCheck.Enabled = false;
+                checkBoxTimerEnabled.Enabled = false;
+                if (IsUnfinishedTaskPresent())
+                {
+                    e.Cancel = true;
+                    if (!_isClosing)
+                    {
+                        _isClosing = true;
+                        StopAll();
+                        bool unfinished = true;
+                        Task.Run(() =>
+                        {
+                            while (unfinished)
+                            {
+                                Thread.Sleep(200);
+                                Invoke(new MethodInvoker(() => unfinished = IsUnfinishedTaskPresent()));
+                            }
+
+                            Invoke(new MethodInvoker(() => Close()));
+                        });
+                    }
+                }
+            }
+        }
+
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
             if (e.CloseReason != CloseReason.ApplicationExitCall)
             {
                 config.Save();
-                SaveList(config.StreamListFilePath);
+                SaveChannelList(config.ChannelListFilePath);
             }
         }
 
-        private void SaveList(string filePath)
+        private void SaveChannelList(string filePath)
         {
             JArray jArray = new JArray();
             foreach (ListViewItem item in listViewStreams.Items)
@@ -173,7 +217,6 @@ namespace Twitch_watchman
                 StreamItem streamItem = item.Tag as StreamItem;
                 JObject jItem = new JObject();
                 jItem["channelName"] = streamItem.ChannelName;
-                jItem["copiesCount"] = streamItem.CopiesCount;
                 jItem["important"] = streamItem.IsImportant;
                 jArray.Add(jItem);
             }
@@ -184,25 +227,16 @@ namespace Twitch_watchman
             File.WriteAllText(filePath, jArray.ToString());
         }
 
-        private void LoadList(string filePath)
+        private void LoadChannelList(string filePath)
         {
             JArray jArray = JArray.Parse(File.ReadAllText(filePath));
             foreach (JObject j in jArray)
             {
                 string channelName = j.Value<string>("channelName");
                 StreamItem streamItem = new StreamItem(channelName);
-                streamItem.CopiesCount = j.Value<int>("copiesCount");
-                if (streamItem.CopiesCount > 3)
-                {
-                    streamItem.CopiesCount = 3;
-                }
-                else if (streamItem.CopiesCount < 0)
-                {
-                    streamItem.CopiesCount = 0;
-                }
                 streamItem.IsImportant = j.Value<bool>("important");
-
                 streamItem.TimerRemaining = config.CheckingIntervalInactive;
+
                 AddStream(streamItem);
             }
         }
@@ -254,20 +288,6 @@ namespace Twitch_watchman
             }
         }
 
-        private void btnBrowseFfmpeg_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Title = "Выберите файл FFMPEG.EXE";
-            ofd.Filter = "*.EXE|*.exe";
-            string t = Path.GetDirectoryName(config.FfmpegPath);
-            ofd.InitialDirectory = t != null && t.Equals(string.Empty) ? config.SelfDirPath : t;
-            if (ofd.ShowDialog() == DialogResult.OK)
-            {
-                config.FfmpegPath = ofd.FileName;
-                textBoxFfmpegPath.Text = ofd.FileName;
-            }
-        }
-
         private void btnCheckAll_Click(object sender, EventArgs e)
         {
             CheckAllItems();
@@ -276,11 +296,6 @@ namespace Twitch_watchman
         private void textBoxDownloadingDir_Leave(object sender, EventArgs e)
         {
             config.DownloadingDirPath = textBoxDownloadingDir.Text;
-        }
-
-        private void textBoxFfmpegPath_Leave(object sender, EventArgs e)
-        {
-            config.FfmpegPath = textBoxFfmpegPath.Text;
         }
 
         private void textBoxFileNameFormat_Leave(object sender, EventArgs e)
@@ -294,9 +309,12 @@ namespace Twitch_watchman
             ListViewItem item = new ListViewItem(streamItem.ChannelName);
             item.SubItems.Add(timerCheck.Enabled ? streamItem.TimerRemaining.ToString() : "Отключен!");
             item.SubItems.Add(streamItem.DumpingFilePath);
-            string sizeString = streamItem.DumpingFileSize >= 0L ? streamItem.DumpingFileSize.ToString() : string.Empty;
-            item.SubItems.Add(sizeString);
-            item.SubItems.Add(streamItem.CopiesCount.ToString());
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
             item.Tag = streamItem;
@@ -317,7 +335,12 @@ namespace Twitch_watchman
                     timerCheck.Enabled ? streamItem.TimerRemaining.ToString() : "Отключен!";
                 listViewStreams.Items[id].SubItems[COLUMN_ID_FILEPATH].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = null;
-                listViewStreams.Items[id].SubItems[COLUMN_ID_DATE].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_DELAY].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_NEWCHUNKS].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_PROCESSEDCHUNKS].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_FIRSTCHUNKID].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_LOSTCHUNKS].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_DUMPSTARTDATE].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLIST_URL].Text = null;
             }
         }
@@ -328,11 +351,20 @@ namespace Twitch_watchman
             {
                 streamItem.IsChecking = true;
                 listViewStreams.Items[itemIndex].SubItems[COLUMN_ID_TIMER].Text = "Запуск проверки...";
-                if (!streamItem.IsStreamActive)
+                bool saveChunksInfo = config.SaveChunksInfo;
+                bool stopIfPlaylistLost = config.StopIfPlaylistLost;
+
+                Task.Run(() =>
                 {
-                    listViewStreams.Items[itemIndex].SubItems[COLUMN_ID_FILEPATH].Text = null;
-                }
-                MakeThread(streamItem).Start(SynchronizationContext.Current);
+                    ChannelChecker checker = new ChannelChecker(streamItem, config.SaveStreamInfo);
+                    checker.Check(OnChannelCheckingStarted, OnNewLiveDetected,
+                        OnPlaylistUrlDetected, OnPlaylistFirstArrived,
+                        OnDumpingStarted, OnDumpingProgress, OnChannelCheckingCompleted,
+                        OnTitleDetected, OnTitleChanged,
+                        null, null, null, null, null,
+                        null, null, null, null, OnDumpingFinished,
+                        saveChunksInfo, stopIfPlaylistLost);
+                });
             }
         }
 
@@ -354,226 +386,262 @@ namespace Twitch_watchman
         {
             for (int i = 0; i < listViewStreams.Items.Count; ++i)
             {
-                try
+                StreamItem streamItem = listViewStreams.Items[i].Tag as StreamItem;
+                if (!streamItem.IsChecking)
                 {
-                    StreamItem streamItem = listViewStreams.Items[i].Tag as StreamItem;
-                    if (!streamItem.IsChecking)
+                    streamItem.TimerRemaining--;
+                    listViewStreams.Items[i].SubItems[COLUMN_ID_TIMER].Text = streamItem.TimerRemaining.ToString();
+                    if (streamItem.TimerRemaining <= 0)
                     {
-                        streamItem.TimerRemaining--;
-                        listViewStreams.Items[i].SubItems[COLUMN_ID_TIMER].Text = streamItem.TimerRemaining.ToString();
-                        if (streamItem.TimerRemaining <= 0)
-                        {
-                            CheckItem(streamItem, i);
-                        }
+                        CheckItem(streamItem, i);
                     }
                 }
-                catch (Exception ex)
+            }
+        }
+
+        private void OnChannelCheckingStarted(object sender)
+        {
+            if (InvokeRequired)
+            {
+                Invoke((MethodInvoker)delegate { OnChannelCheckingStarted(sender); });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
                 {
-                    System.Diagnostics.Debug.WriteLine(ex.Message);
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_TIMER].Text = "Проверка...";
                 }
             }
         }
 
-        private Thread MakeThread(StreamItem streamItem)
+        private void OnPlaylistFirstArrived(object sender, int chunkCount, long firstChunkId)
         {
-            ThreadChecker threadChecker = new ThreadChecker(streamItem, config.SaveStreamInfo);
-            threadChecker.CheckingStarted += OnCheckingStarted;
-            threadChecker.NewLiveDetected += OnLiveDetected;
-            threadChecker.TitleDetected += OnTitleDetected;
-            threadChecker.PlaylistUrlDetected += OnPlaylistUrlDetected;
-            threadChecker.DumpingStarted += OnDumpingStarted;
-            threadChecker.FileSizeChanged += OnFileSizeChanged;
-            threadChecker.DumpingHalted += OnDumpingHalted;
-            threadChecker.TitleChanged += OnTitleChanged;
-            threadChecker.Completed += OnThreadCheckingCompleted;
-            threadChecker.LogAdding += OnLogAdding;
-
-            return new Thread(threadChecker.Work);
-        }
-
-        private void OnCheckingStarted(object sender)
-        {
-            StreamItem streamItem = (sender as ThreadChecker).StreamItem;
-            int id = FindStreamItemInListView(streamItem, listViewStreams);
-            if (id >= 0)
+            if (InvokeRequired)
             {
-                listViewStreams.Items[id].SubItems[COLUMN_ID_TIMER].Text = "Проверка...";
+                Invoke((MethodInvoker)delegate { OnPlaylistFirstArrived(sender, chunkCount, firstChunkId); });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
+                {
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_FIRSTCHUNKID].Text = firstChunkId.ToString();
+                }
             }
         }
 
-        private void OnLiveDetected(object sender)
+        private void OnNewLiveDetected(object sender)
         {
-            StreamItem streamItem = (sender as ThreadChecker).StreamItem;
-            notifyIcon1.BalloonTipTitle = "СТРИИИИИИМ!!!!!!!";
-            notifyIcon1.BalloonTipText = $"Канал {streamItem.ChannelName} начал трансляцию!";
-            notifyIcon1.BalloonTipIcon = ToolTipIcon.Info;
-            notifyIcon1.ShowBalloonTip(5000);
-
-            AddToLog(streamItem.ChannelName, "Новая трансляция!");
-            if (streamItem.CopiesCount == 0)
+            if (InvokeRequired)
             {
-                AddToLog(streamItem.ChannelName, "<Dumping is disabled!>");
+                Invoke((MethodInvoker)delegate { OnNewLiveDetected(sender); });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                notifyIcon1.BalloonTipTitle = "СТРИИИИИИМ!!!!!!!";
+                notifyIcon1.BalloonTipText = $"Канал {streamItem.ChannelName} начал трансляцию!";
+                notifyIcon1.BalloonTipIcon = ToolTipIcon.Info;
+                notifyIcon1.ShowBalloonTip(5000);
+
+                AddToLog(streamItem.ChannelName, "Новая трансляция!");
             }
         }
 
         private void OnTitleDetected(object sender, string title)
         {
-            StreamItem streamItem = (sender as ThreadChecker).StreamItem;
-            AddToLog(streamItem.ChannelName, $"Название стрима: {title}");
+            if (InvokeRequired)
+            {
+                Invoke((MethodInvoker)delegate { OnTitleDetected(sender, title); });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                AddToLog(streamItem.ChannelName, $"Название стрима: {title}");
+            }
         }
 
         private void OnPlaylistUrlDetected(object sender, string playlistUrl)
         {
-            StreamItem streamItem = (sender as ThreadChecker).StreamItem;
-            int id = FindStreamItemInListView(streamItem, listViewStreams);
-            if (id >= 0)
+            if (InvokeRequired)
             {
-                listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLIST_URL].Text = playlistUrl;
+                Invoke((MethodInvoker)delegate { OnPlaylistUrlDetected(sender, playlistUrl); });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
+                {
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLIST_URL].Text = playlistUrl;
+                }
             }
         }
 
         private void OnTitleChanged(object sender)
         {
-            StreamItem streamItem = (sender as ThreadChecker).StreamItem;
-            notifyIcon1.BalloonTipTitle = streamItem.ChannelName;
-            notifyIcon1.BalloonTipText = $"Изменилось название: {streamItem.Title}";
-            notifyIcon1.BalloonTipIcon = ToolTipIcon.Info;
-            notifyIcon1.ShowBalloonTip(5000);
+            if (InvokeRequired)
+            {
+                Invoke((MethodInvoker)delegate { OnTitleChanged(sender); });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
 
-            AddToLog(streamItem.ChannelName, $"Новое название стрима: {streamItem.Title}");
+                if (!_isClosing)
+                {
+                    notifyIcon1.BalloonTipTitle = streamItem.ChannelName;
+                    notifyIcon1.BalloonTipText = $"Изменилось название: {streamItem.Title}";
+                    notifyIcon1.BalloonTipIcon = ToolTipIcon.Info;
+                    notifyIcon1.ShowBalloonTip(5000);
+                }
+
+                AddToLog(streamItem.ChannelName, $"Новое название стрима: {streamItem.Title}");
+            }
         }
 
         private void OnDumpingStarted(object sender, int errorCode)
         {
-            StreamItem streamItem = (sender as ThreadChecker).StreamItem;
-            int id = FindStreamItemInListView(streamItem, listViewStreams);
-            if (id >= 0)
+            if (InvokeRequired)
             {
-                if (errorCode == 200)
+                Invoke((MethodInvoker)delegate { OnDumpingStarted(sender, errorCode); });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
                 {
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_FILEPATH].Text = streamItem.DumpingFilePath;
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = "0";
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_DATE].Text = streamItem.DateLocal.ToString();
-                }
-                else
-                {
-                    notifyIcon1.BalloonTipTitle = streamItem.ChannelName;
-                    notifyIcon1.BalloonTipText = "Ошибка доступа к плейлисту!";
-                    notifyIcon1.BalloonTipIcon = ToolTipIcon.Error;
-                    notifyIcon1.ShowBalloonTip(5000);
+                    if (errorCode == 200)
+                    {
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_FILEPATH].Text = streamItem.DumpingFilePath;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = "0";
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_NEWCHUNKS].Text = null;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_PROCESSEDCHUNKS].Text = null;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_LOSTCHUNKS].Text = "0";
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_DUMPSTARTDATE].Text = streamItem.DateLocal.ToString();
+                    }
+                    else
+                    {
+                        notifyIcon1.BalloonTipTitle = streamItem.ChannelName;
+                        notifyIcon1.BalloonTipText = "Ошибка доступа к плейлисту!";
+                        notifyIcon1.BalloonTipIcon = ToolTipIcon.Error;
+                        notifyIcon1.ShowBalloonTip(5000);
 
-                    AddToLog(streamItem.ChannelName, $"Ошибка доступа к плейлисту! Код ошибки: {errorCode}");
+                        AddToLog(streamItem.ChannelName, $"Ошибка доступа к плейлисту! Код ошибки: {errorCode}");
+
+                        ResetItem(streamItem);
+                    }
+                }
+            }
+        }
+
+        private void OnDumpingProgress(object sender, long fileSize, int errorCode)
+        {
+            if (InvokeRequired)
+            {
+                Invoke((MethodInvoker)delegate { OnDumpingProgress(sender, fileSize, errorCode); });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
+                {
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = FormatSize(fileSize);
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_DELAY].Text =
+                        $"{streamItem.Dumper.LastDelayValueMilliseconds}ms";
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_NEWCHUNKS].Text =
+                        $"{streamItem.Dumper.CurrentPlaylistNewChunkCount} / {streamItem.Dumper.CurrentPlaylistChunkCount}";
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_PROCESSEDCHUNKS].Text =
+                        streamItem.Dumper.ProcessedChunkCountTotal.ToString();
+                }
+            }
+        }
+
+        private void OnDumpingFinished(object sender, int errorCode)
+        {
+            if (InvokeRequired)
+            {
+                Invoke((MethodInvoker)delegate { OnDumpingFinished(sender, errorCode); });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
+                {
+                    if (!_isClosing)
+                    {
+                        notifyIcon1.BalloonTipTitle = streamItem.ChannelName;
+                        notifyIcon1.BalloonTipText = "Трансляция завершена!";
+                        notifyIcon1.BalloonTipIcon = ToolTipIcon.Warning;
+                        notifyIcon1.ShowBalloonTip(5000);
+                    }
+
+                    AddToLog(streamItem.ChannelName, errorCode == HlsDumper.DUMPING_ERROR_CANCELED ?
+                        "Дампинг остановлен!" :
+                        $"Плейлист потерян! Возможно, трансляция завершена! Код ошибки: {errorCode}");
 
                     ResetItem(streamItem);
                 }
             }
         }
 
-        private void OnFileSizeChanged(object sender, long oldFileSize)
+        private void OnChannelCheckingCompleted(object sender, int errorCode)
         {
-            StreamItem streamItem = (sender as ThreadChecker).StreamItem;
-            int id = FindStreamItemInListView(streamItem, listViewStreams);
-            if (id >= 0)
+            if (InvokeRequired)
             {
-                listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = FormatSize(streamItem.DumpingFileSize);
-            }
-        }
-
-        private void OnDumpingHalted(object sender)
-        {
-            StreamItem streamItem = (sender as ThreadChecker).StreamItem;
-            int id = FindStreamItemInListView(streamItem, listViewStreams);
-            if (id >= 0)
-            {
-                notifyIcon1.BalloonTipTitle = streamItem.ChannelName;
-                notifyIcon1.BalloonTipText = "ЗАВИСЛО!!!";
-                notifyIcon1.BalloonTipIcon = ToolTipIcon.Error;
-                notifyIcon1.ShowBalloonTip(5000);
-
-                AddToLog(streamItem.ChannelName, "Зависло нафиг!");
-
-                ResetItem(streamItem);
-
-                MakeThread(streamItem).Start(SynchronizationContext.Current);
-            }
-        }
-
-        private void OnThreadCheckingCompleted(object sender, int errorCode)
-        {
-            StreamItem streamItem = (sender as ThreadChecker).StreamItem;
-            int id = FindStreamItemInListView(streamItem, listViewStreams);
-            if (id >= 0)
-            {
-                if (errorCode == 200)
-                {
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_FILEPATH].Text =
-                        streamItem.CopiesCount > 0 ? streamItem.DumpingFilePath : "<Dumping is disabled>";
-
-                    streamItem.TimerRemaining = config.CheckingIntervalActive;
-                }
-                else
-                {
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_FILEPATH].Text =
-                        errorCode != TwitchApi.ERROR_USER_OFFLINE ?
-                        $"Ошибка! {TwitchApi.ErrorCodeToString(errorCode)}, {(sender as ThreadChecker).LastErrorMessage}" : null;
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = null;
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_DATE].Text = null;
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLIST_URL].Text = null;
-
-                    streamItem.TimerRemaining = errorCode == TwitchApi.ERROR_USER_NOT_FOUND ?
-                        (int)numericUpDownTimerIntervalActive.Maximum : config.CheckingIntervalInactive;
-                }
-                listViewStreams.Items[id].SubItems[COLUMN_ID_TIMER].Text =
-                    timerCheck.Enabled ? streamItem.TimerRemaining.ToString() : "Отключен!";
-            }
-            streamItem.IsChecking = false;
-        }
-
-        private void OnLogAdding(object sender, string logText)
-        {
-            AddToLog((sender as ThreadChecker).StreamItem.ChannelName, logText);
-        }
-
-        private void chkTimerEnabled_CheckedChanged(object sender, EventArgs e)
-        {
-            if (chkTimerEnabled.Checked)
-            {
-                if (string.IsNullOrEmpty(config.FfmpegPath) || string.IsNullOrWhiteSpace(config.FfmpegPath) ||
-                    !File.Exists(config.FfmpegPath))
-                {
-                    notifyIcon1.BalloonTipTitle = "О горе!";
-                    notifyIcon1.BalloonTipText = "FFMPEG.EXE не найден!";
-                    notifyIcon1.BalloonTipIcon = ToolTipIcon.Error;
-                    notifyIcon1.ShowBalloonTip(5000);
-                    chkTimerEnabled.Checked = false;
-                    return;
-                }
-
-                for (int i = 0; i < listViewStreams.Items.Count; ++i)
-                {
-                    StreamItem streamItem = listViewStreams.Items[i].Tag as StreamItem;
-                    if (!streamItem.IsChecking)
-                    {
-                        streamItem.TimerRemaining = streamItem.IsStreamActive ? config.CheckingIntervalActive : config.CheckingIntervalInactive;
-                        listViewStreams.Items[i].SubItems[COLUMN_ID_TIMER].Text = streamItem.TimerRemaining.ToString();
-                    }
-                }
-
-                timerCheck.Enabled = true;
+                Invoke((MethodInvoker)delegate { OnChannelCheckingCompleted(sender, errorCode); });
             }
             else
             {
-                timerCheck.Enabled = false;
-                for (int i = 0; i < listViewStreams.Items.Count; ++i)
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
                 {
-                    StreamItem streamItem = listViewStreams.Items[i].Tag as StreamItem;
-                    if (!streamItem.IsChecking)
+                    if (errorCode == 200)
                     {
-                        listViewStreams.Items[i].SubItems[COLUMN_ID_TIMER].Text = "Отключен!";
-                        streamItem.TimerRemaining = streamItem.IsStreamActive ? config.CheckingIntervalActive : config.CheckingIntervalInactive;
+                        streamItem.TimerRemaining = config.CheckingIntervalActive;
                     }
+                    else
+                    {
+                        ResetItem(streamItem);
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_FILEPATH].Text =
+                            errorCode != TwitchApi.ERROR_USER_OFFLINE ?
+                            $"Ошибка! {TwitchApi.ErrorCodeToString(errorCode)}, {(sender as ChannelChecker).LastErrorMessage}" : null;
+                        streamItem.TimerRemaining = errorCode == TwitchApi.ERROR_USER_NOT_FOUND ?
+                            (int)numericUpDownTimerIntervalActive.Maximum : config.CheckingIntervalInactive;
+                    }
+
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_TIMER].Text =
+                        timerCheck.Enabled ? streamItem.TimerRemaining.ToString() : "Отключен!";
                 }
+
+                streamItem.IsChecking = false;
             }
+        }
+
+        private void StopAll()
+        {
+            foreach (ListViewItem listViewItem in listViewStreams.Items)
+            {
+                StreamItem streamItem = listViewItem.Tag as StreamItem;
+                streamItem.Dumper?.StopDumping();
+            }
+        }
+
+        private bool IsUnfinishedTaskPresent()
+        {
+            foreach (ListViewItem listViewItem in listViewStreams.Items)
+            {
+                StreamItem streamItem = listViewItem.Tag as StreamItem;
+                if (streamItem.IsStreamActive) { return true; }
+            }
+            return false;
         }
 
         private void numericUpDownTimerIntervalInactive_ValueChanged(object sender, EventArgs e)
@@ -586,7 +654,7 @@ namespace Twitch_watchman
             config.CheckingIntervalActive = (int)numericUpDownTimerIntervalActive.Value;
         }
 
-        private void btnSetDefaultFilNameFormat_Click(object sender, EventArgs e)
+        private void btnSetDefaultFileNameFormat_Click(object sender, EventArgs e)
         {
             config.FileNameFormat = FILENAME_FORMAT_DEFAULT;
             textBoxFileNameFormat.Text = FILENAME_FORMAT_DEFAULT;
@@ -627,54 +695,6 @@ namespace Twitch_watchman
             }
         }
 
-        private void listViewStreams_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
-        {
-            try
-            {
-                using (Bitmap bitmap = new Bitmap(e.Bounds.Width, e.Bounds.Height))
-                {
-                    using (Graphics buffer = Graphics.FromImage(bitmap))
-                    {
-                        using (StringFormat sf = new StringFormat())
-                        {
-                            sf.FormatFlags = StringFormatFlags.NoWrap;
-                            sf.LineAlignment = StringAlignment.Center;
-                            switch (e.Header.TextAlign)
-                            {
-                                case HorizontalAlignment.Center:
-                                    sf.Alignment = StringAlignment.Center;
-                                    break;
-                                case HorizontalAlignment.Right:
-                                    sf.Alignment = StringAlignment.Far;
-                                    break;
-                            }
-                            
-                            bool selected = listViewStreams.SelectedIndices.Count > 0 && listViewStreams.SelectedIndices[0] == e.ItemIndex;
-                            Brush brushBkg = selected ? SystemBrushes.Highlight : SystemBrushes.Control;
-                            Rectangle r = new Rectangle(0, 0, e.Bounds.Width, e.Bounds.Height);
-                            buffer.FillRectangle(brushBkg, r);
-                            StreamItem streamItem = listViewStreams.Items[e.ItemIndex].Tag as StreamItem;
-                            Brush brushText;
-                            if (selected)
-                            {
-                                brushText = streamItem.IsImportant && (e.ColumnIndex == 0 || e.ColumnIndex == 2) ? Brushes.Yellow : Brushes.White;
-                            }
-                            else
-                            {
-                                brushText = streamItem.IsImportant && (e.ColumnIndex == 0 || e.ColumnIndex == 2) ? Brushes.Red : Brushes.Black;
-                            }
-                            buffer.DrawString(e.SubItem.Text, listViewStreams.Font, brushText, r, sf);
-                            e.Graphics.DrawImage(bitmap, e.Bounds.X, e.Bounds.Y);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
-            }
-        }
-
         private void listViewStreams_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
         {
             try
@@ -703,6 +723,64 @@ namespace Twitch_watchman
             }
         }
 
+        private void listViewStreams_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
+        {
+            try
+            {
+                using (Bitmap bitmap = new Bitmap(e.Bounds.Width, e.Bounds.Height))
+                {
+                    using (Graphics buffer = Graphics.FromImage(bitmap))
+                    {
+                        using (StringFormat sf = new StringFormat())
+                        {
+                            sf.FormatFlags = StringFormatFlags.NoWrap;
+                            sf.LineAlignment = StringAlignment.Center;
+                            switch (e.Header.TextAlign)
+                            {
+                                case HorizontalAlignment.Center:
+                                    sf.Alignment = StringAlignment.Center;
+                                    break;
+                                case HorizontalAlignment.Right:
+                                    sf.Alignment = StringAlignment.Far;
+                                    break;
+                            }
+
+                            bool selected = listViewStreams.SelectedIndices.Count > 0 && listViewStreams.SelectedIndices[0] == e.ItemIndex;
+                            Brush brushBkg = selected ? SystemBrushes.Highlight : SystemBrushes.Control;
+                            Rectangle r = new Rectangle(0, 0, e.Bounds.Width, e.Bounds.Height);
+                            buffer.FillRectangle(brushBkg, r);
+                            StreamItem streamItem = listViewStreams.Items[e.ItemIndex].Tag as StreamItem;
+                            Brush brushText;
+                            if (selected)
+                            {
+                                brushText = streamItem.IsImportant && (e.ColumnIndex == 0 || e.ColumnIndex == 2) ? Brushes.Yellow : Brushes.White;
+                            }
+                            else
+                            {
+                                brushText = streamItem.IsImportant && (e.ColumnIndex == 0 || e.ColumnIndex == 2) ? Brushes.Red : Brushes.Black;
+                            }
+                            buffer.DrawString(e.SubItem.Text, listViewStreams.Font, brushText, r, sf);
+                            e.Graphics.DrawImage(bitmap, e.Bounds.X, e.Bounds.Y);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
+            }
+        }
+
+        private void contextMenuStrip1_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            int id = listViewStreams.SelectedIndex();
+            if (id >= 0)
+            {
+                StreamItem streamItem = listViewStreams.Items[id].Tag as StreamItem;
+                miImportantChannelToolStripMenuItem.Checked = streamItem.IsImportant;
+            }
+        }
+
         private void miImportantChannelToolStripMenuItem_Click(object sender, EventArgs e)
         {
             int id = listViewStreams.SelectedIndex();
@@ -716,44 +794,18 @@ namespace Twitch_watchman
             }
         }
 
-        private void contextMenuStrip1_Opening(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            int id = listViewStreams.SelectedIndex();
-            if (id >= 0)
-            {
-                StreamItem streamItem = listViewStreams.Items[id].Tag as StreamItem;
-                miImportantChannelToolStripMenuItem.Checked = streamItem.IsImportant;
-                miKeepAliveToolStripMenuItem.Checked = streamItem.KeepAlive;
-            }
-        }
-
         private void miEditChannelToolStripMenuItem_Click(object sender, EventArgs e)
         {
             int id = listViewStreams.SelectedIndex();
             if (id >= 0)
             {
                 StreamItem streamItem = listViewStreams.Items[id].Tag as StreamItem;
-                int prevCopiesCount = streamItem.CopiesCount;
                 FormItemEditor itemEditor = new FormItemEditor(streamItem);
                 if (itemEditor.ShowDialog() == DialogResult.OK)
                 {
                     streamItem.TimerRemaining =
                         streamItem.IsStreamActive ? config.CheckingIntervalActive : config.CheckingIntervalInactive;
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_COPIES_COUNT].Text =
-                        streamItem.CopiesCount.ToString();
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_TIMER].Text =
-                        timerCheck.Enabled ? streamItem.TimerRemaining.ToString() : "Отключен!";
-                    if (streamItem.IsStreamActive)
-                    {
-                        listViewStreams.Items[id].SubItems[COLUMN_ID_FILEPATH].Text = streamItem.DumpingFilePath;
-                        streamItem.DumpingFileSize = GetFileSize(streamItem.DumpingFilePath);
-                        if (prevCopiesCount == 0 && streamItem.CopiesCount > 0 && streamItem.DumpingFileSize == -1L)
-                        {
-                            LaunchFfmpeg(streamItem.PlaylistUrl, streamItem.DumpingFilePath);
-                            streamItem.DumpingFileSize = 0L;
-                            listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = "0";
-                        }
-                    }
+                    listViewStreams.Refresh();
                 }
             }
         }
@@ -780,27 +832,20 @@ namespace Twitch_watchman
             }
         }
 
-        private void miClearDumpInfoToolStripMenuItem_Click(object sender, EventArgs e)
+        private void miCopyPlaylistUrlToolStripMenuItem_Click(object sender, EventArgs e)
         {
             int id = listViewStreams.SelectedIndex();
             if (id >= 0)
             {
                 StreamItem streamItem = listViewStreams.Items[id].Tag as StreamItem;
-                ResetItem(streamItem);
+                if (!string.IsNullOrEmpty(streamItem.PlaylistUrl))
+                {
+                    SetClipboardText(streamItem.PlaylistUrl);
+                }
             }
         }
 
-        private void miKeepAliveToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            int id = listViewStreams.SelectedIndex();
-            if (id >= 0)
-            {
-                StreamItem streamItem = listViewStreams.Items[id].Tag as StreamItem;
-                streamItem.KeepAlive = !streamItem.KeepAlive;
-            }
-        }
-
-        private void miRhemoveChannelToolStripMenuItem_Click(object sender, EventArgs e)
+        private void miRemoveChannelToolStripMenuItem_Click(object sender, EventArgs e)
         {
             int id = listViewStreams.SelectedIndex();
             if (id >= 0 && id < listViewStreams.Items.Count)
@@ -821,47 +866,6 @@ namespace Twitch_watchman
             }
         }
 
-        private void miBrowseForKeepAliveFileToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            int id = listViewStreams.SelectedIndex();
-            if (id >= 0)
-            {
-                StreamItem streamItem = listViewStreams.Items[id].Tag as StreamItem;
-                if (string.IsNullOrEmpty(streamItem.DumpingFilePath))
-                {
-                    MessageBox.Show("Стрима нет!", "Ошибка!",
-                        MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                    return;
-                }
-
-                try
-                {
-                    using (OpenFileDialog ofd = new OpenFileDialog())
-                    {
-                        ofd.Title = "Select a file";
-                        if (!string.IsNullOrEmpty(streamItem.DumpingFilePath))
-                        {
-                            ofd.InitialDirectory = Path.GetDirectoryName(streamItem.DumpingFilePath);
-                        }
-                        ofd.Filter = "*.TS-files|*.ts";
-                        if (ofd.ShowDialog() == DialogResult.OK)
-                        {
-                            streamItem.DumpingFilePath = ofd.FileName;
-                            streamItem.DumpingFileSize = GetFileSize(ofd.FileName);
-                            streamItem.TimerRemaining = config.CheckingIntervalActive;
-
-                            listViewStreams.Items[id].SubItems[COLUMN_ID_TIMER].Text = streamItem.TimerRemaining.ToString();
-                            listViewStreams.Items[id].SubItems[COLUMN_ID_FILEPATH].Text = ofd.FileName;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine(ex.Message);
-                }
-            }
-        }
-
         private void miCopyChannelNameToolStripMenuItem_Click(object sender, EventArgs e)
         {
             int id = listViewStreams.SelectedIndex();
@@ -872,9 +876,60 @@ namespace Twitch_watchman
             }
         }
 
-        private void chkSaveStreamInfo_CheckedChanged(object sender, EventArgs e)
+        private void miStopDumpToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            config.SaveStreamInfo = chkSaveStreamInfo.Checked;
+            int id = listViewStreams.SelectedIndex();
+            if (id >= 0)
+            {
+                StreamItem streamItem = listViewStreams.Items[id].Tag as StreamItem;
+                streamItem.Dumper?.StopDumping();
+            }
+        }
+
+        private void checkBoxTimerEnabled_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxTimerEnabled.Checked)
+            {
+                for (int i = 0; i < listViewStreams.Items.Count; ++i)
+                {
+                    StreamItem streamItem = listViewStreams.Items[i].Tag as StreamItem;
+                    if (!streamItem.IsChecking)
+                    {
+                        streamItem.TimerRemaining = streamItem.IsStreamActive ? config.CheckingIntervalActive : config.CheckingIntervalInactive;
+                        listViewStreams.Items[i].SubItems[COLUMN_ID_TIMER].Text = streamItem.TimerRemaining.ToString();
+                    }
+                }
+
+                timerCheck.Enabled = true;
+            }
+            else
+            {
+                timerCheck.Enabled = false;
+                for (int i = 0; i < listViewStreams.Items.Count; ++i)
+                {
+                    StreamItem streamItem = listViewStreams.Items[i].Tag as StreamItem;
+                    if (!streamItem.IsChecking)
+                    {
+                        listViewStreams.Items[i].SubItems[COLUMN_ID_TIMER].Text = "Отключен!";
+                        streamItem.TimerRemaining = streamItem.IsStreamActive ? config.CheckingIntervalActive : config.CheckingIntervalInactive;
+                    }
+                }
+            }
+        }
+
+        private void checkBoxSaveStreamInfo_CheckedChanged(object sender, EventArgs e)
+        {
+            config.SaveStreamInfo = checkBoxSaveStreamInfo.Checked;
+        }
+
+        private void checkBoxSaveChunksInfo_CheckedChanged(object sender, EventArgs e)
+        {
+            config.SaveChunksInfo = checkBoxSaveChunksInfo.Checked;
+        }
+
+        private void checkBoxStopIfPlaylistLost_CheckedChanged(object sender, EventArgs e)
+        {
+            config.StopIfPlaylistLost = checkBoxStopIfPlaylistLost.Checked;
         }
     }
 }

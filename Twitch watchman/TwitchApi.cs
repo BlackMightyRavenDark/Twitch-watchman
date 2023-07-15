@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Specialized;
-using System.Deployment.Application;
 using System.IO;
-using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using static Twitch_watchman.Utils;
 
@@ -24,15 +22,12 @@ namespace Twitch_watchman
         /// </summary>
         public const string TWITCH_GQL_API_URL = "https://gql.twitch.tv/gql";
 
-        private const string TWITCH_USHER_HLS_1 = "https://usher.ttvnw.net/api/channel/hls/{0}.m3u8?";
-        private const string TWITCH_USHER_HLS_2 =
-                "player=twitchweb&p={0}&type=any&allow_source=true&" +
-                "allow_audio_only=true&allow_spectre=false&sig={1}&token={2}&fast_bread=True";
+        private const string TWITCH_USHER_HLS_URL_TEMPLATE = "https://usher.ttvnw.net/api/channel/hls/{0}.m3u8";
+
+        public TwitchHelixOauthToken HelixOauthToken { get; private set; } = new TwitchHelixOauthToken();
 
         public const int ERROR_USER_NOT_FOUND = -1000;
         public const int ERROR_USER_OFFLINE = -1001;
-
-        public TwitchHelixOauthToken HelixOauthToken { get; private set; } = new TwitchHelixOauthToken();
 
         public int GetHelixOauthToken(out string resToken)
         {
@@ -102,7 +97,7 @@ namespace Twitch_watchman
             return errorCode;
         }
 
-        public void ParseChannelToken(string unparsedChannelToken, out string token, out string signature)
+        public bool ParseChannelToken(string unparsedChannelToken, out string token, out string signature)
         {
             JArray json = JArray.Parse(unparsedChannelToken);
             if (json.Count > 0)
@@ -115,13 +110,14 @@ namespace Twitch_watchman
                     {
                         token = Uri.EscapeDataString(jToken.Value<string>("value"));
                         signature = jToken.Value<string>("signature");
-                        return;
+                        return true;
                     }
                 }
             }
 
             token = null;
             signature = null;
+            return false;
         }
 
         public int GetLiveStreamManifestUrl(string channelName, out string manifestUrl)
@@ -129,10 +125,30 @@ namespace Twitch_watchman
             int errorCode = GetChannelAccessToken(channelName, out string unparsedToken);
             if (errorCode == 200)
             {
-                ParseChannelToken(unparsedToken, out string token, out string sig);
-                int randomInt = new Random().Next(999999);
-                manifestUrl = string.Format(TWITCH_USHER_HLS_1, channelName) +
-                    string.Format(TWITCH_USHER_HLS_2, randomInt.ToString(), sig, token);
+                if (!ParseChannelToken(unparsedToken, out string token, out string signature))
+                {
+                    manifestUrl = null;
+                    return 404;
+                }
+
+                int randomInt = new Random((int)DateTime.UtcNow.Ticks).Next(999999);
+
+                NameValueCollection query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+                query.Add("sig", signature);
+                query.Add("p", randomInt.ToString());
+                query.Add("acmb", "e30=");
+                query.Add("allow_source", "true");
+                query.Add("fast_bread", "true");
+                query.Add("player_backend", "mediaplayer");
+                query.Add("playlist_include_framerate", "true");
+                query.Add("reassignments_supported", "true");
+                query.Add("supported_codecs", "avc1");
+                query.Add("transcode_mode", "cbr_v1");
+                query.Add("cdm", "wv");
+                query.Add("player_version", "1.20.0");
+
+                string usherUrl = string.Format(TWITCH_USHER_HLS_URL_TEMPLATE, channelName);
+                manifestUrl = $"{usherUrl}?{query}&token={token}";
             }
             else
             {

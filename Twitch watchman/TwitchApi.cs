@@ -132,23 +132,29 @@ namespace Twitch_watchman
                 }
 
                 int randomInt = new Random((int)DateTime.UtcNow.Ticks).Next(999999);
+                string decodedToken = System.Web.HttpUtility.UrlDecode(token);
 
                 NameValueCollection query = System.Web.HttpUtility.ParseQueryString(string.Empty);
-                query.Add("sig", signature);
-                query.Add("p", randomInt.ToString());
+                /*
+                 * Работает не всегда правильно (иногда выдаёт рекламу в начале видео).
+                 * TODO: Разобраться, почему так.
+                 */
                 query.Add("acmb", "e30=");
                 query.Add("allow_source", "true");
                 query.Add("fast_bread", "true");
+                query.Add("p", randomInt.ToString());
                 query.Add("player_backend", "mediaplayer");
                 query.Add("playlist_include_framerate", "true");
                 query.Add("reassignments_supported", "true");
+                query.Add("sig", signature);
                 query.Add("supported_codecs", "avc1");
+                query.Add("token", decodedToken);
                 query.Add("transcode_mode", "cbr_v1");
                 query.Add("cdm", "wv");
                 query.Add("player_version", "1.20.0");
 
                 string usherUrl = string.Format(TWITCH_USHER_HLS_URL_TEMPLATE, channelName);
-                manifestUrl = $"{usherUrl}?{query}&token={token}";
+                manifestUrl = $"{usherUrl}?{query}";
             }
             else
             {

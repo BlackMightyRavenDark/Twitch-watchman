@@ -36,8 +36,8 @@
     <ApplicationIcon>Resources\eye.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HlsDumpLib, Version=0.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\HlsDumpLib.0.0.1\lib\netstandard2.0\HlsDumpLib.dll</HintPath>
+    <Reference Include="HlsDumpLib, Version=0.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\HlsDumpLib.0.0.2\lib\netstandard2.0\HlsDumpLib.dll</HintPath>
     </Reference>
     <Reference Include="MultiThreadedDownloader, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MultiThreadedDownloader.1.1.0\lib\netstandard2.0\MultiThreadedDownloader.dll</HintPath>

@@ -83,6 +83,11 @@ namespace Twitch_watchman
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
             this.miStopDumpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.columnHeaderChunkProcessingTime = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderChunkSize = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderStatus = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderPlaylistErrors = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderOtherErrors = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -134,11 +139,16 @@ namespace Twitch_watchman
             this.columnHeaderDumpingFile,
             this.columnHeaderFileSize,
             this.columnHeaderDelay,
+            this.columnHeaderChunkProcessingTime,
+            this.columnHeaderChunkSize,
             this.columnHeaderNewChunks,
             this.columnHeaderProcessedChunks,
             this.columnHeaderFirstChunkId,
             this.columnHeaderLostChunks,
             this.columnHeaderDumpStartedDate,
+            this.columnHeaderStatus,
+            this.columnHeaderPlaylistErrors,
+            this.columnHeaderOtherErrors,
             this.columnHeaderPlaylistUrl});
             this.listViewStreams.FullRowSelect = true;
             this.listViewStreams.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
@@ -171,7 +181,7 @@ namespace Twitch_watchman
             // columnHeaderDumpingFile
             // 
             this.columnHeaderDumpingFile.Text = "Дампинг файл";
-            this.columnHeaderDumpingFile.Width = 250;
+            this.columnHeaderDumpingFile.Width = 170;
             // 
             // columnHeaderFileSize
             // 
@@ -182,12 +192,12 @@ namespace Twitch_watchman
             // columnHeaderDelay
             // 
             this.columnHeaderDelay.Text = "Задержка";
-            this.columnHeaderDelay.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.columnHeaderDelay.Width = 100;
+            this.columnHeaderDelay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
             // columnHeaderNewChunks
             // 
             this.columnHeaderNewChunks.Text = "Новые чанки";
+            this.columnHeaderNewChunks.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.columnHeaderNewChunks.Width = 80;
             // 
             // columnHeaderProcessedChunks
@@ -218,11 +228,11 @@ namespace Twitch_watchman
             // btnAddNewStream
             // 
             this.btnAddNewStream.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnAddNewStream.Location = new System.Drawing.Point(818, 6);
+            this.btnAddNewStream.Location = new System.Drawing.Point(802, 6);
             this.btnAddNewStream.Name = "btnAddNewStream";
-            this.btnAddNewStream.Size = new System.Drawing.Size(75, 23);
+            this.btnAddNewStream.Size = new System.Drawing.Size(91, 23);
             this.btnAddNewStream.TabIndex = 4;
-            this.btnAddNewStream.Text = "Добавить";
+            this.btnAddNewStream.Text = "Добавить...";
             this.btnAddNewStream.UseVisualStyleBackColor = true;
             this.btnAddNewStream.Click += new System.EventHandler(this.btnAddNewStream_Click);
             // 
@@ -308,7 +318,7 @@ namespace Twitch_watchman
             this.groupBox3.Controls.Add(this.label5);
             this.groupBox3.Location = new System.Drawing.Point(3, 114);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(842, 81);
+            this.groupBox3.Size = new System.Drawing.Size(825, 81);
             this.groupBox3.TabIndex = 6;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Частота проверки";
@@ -389,7 +399,7 @@ namespace Twitch_watchman
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Location = new System.Drawing.Point(3, 3);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(842, 105);
+            this.groupBox2.Size = new System.Drawing.Size(825, 105);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Файлы и папки";
@@ -397,7 +407,7 @@ namespace Twitch_watchman
             // btnSetDefaultFileNameFormat
             // 
             this.btnSetDefaultFileNameFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSetDefaultFileNameFormat.Location = new System.Drawing.Point(727, 74);
+            this.btnSetDefaultFileNameFormat.Location = new System.Drawing.Point(710, 74);
             this.btnSetDefaultFileNameFormat.Name = "btnSetDefaultFileNameFormat";
             this.btnSetDefaultFileNameFormat.Size = new System.Drawing.Size(109, 23);
             this.btnSetDefaultFileNameFormat.TabIndex = 8;
@@ -411,7 +421,7 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxFileNameFormat.Location = new System.Drawing.Point(15, 76);
             this.textBoxFileNameFormat.Name = "textBoxFileNameFormat";
-            this.textBoxFileNameFormat.Size = new System.Drawing.Size(706, 20);
+            this.textBoxFileNameFormat.Size = new System.Drawing.Size(689, 20);
             this.textBoxFileNameFormat.TabIndex = 7;
             this.textBoxFileNameFormat.Leave += new System.EventHandler(this.textBoxFileNameFormat_Leave);
             // 
@@ -427,7 +437,7 @@ namespace Twitch_watchman
             // btnBrowseDownloadingDirectory
             // 
             this.btnBrowseDownloadingDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(795, 35);
+            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(778, 35);
             this.btnBrowseDownloadingDirectory.Name = "btnBrowseDownloadingDirectory";
             this.btnBrowseDownloadingDirectory.Size = new System.Drawing.Size(41, 23);
             this.btnBrowseDownloadingDirectory.TabIndex = 4;
@@ -441,7 +451,7 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxDownloadingDir.Location = new System.Drawing.Point(16, 37);
             this.textBoxDownloadingDir.Name = "textBoxDownloadingDir";
-            this.textBoxDownloadingDir.Size = new System.Drawing.Size(773, 20);
+            this.textBoxDownloadingDir.Size = new System.Drawing.Size(756, 20);
             this.textBoxDownloadingDir.TabIndex = 0;
             this.textBoxDownloadingDir.Leave += new System.EventHandler(this.textBoxDownloadingDir_Leave);
             // 
@@ -594,6 +604,32 @@ namespace Twitch_watchman
             this.miStopDumpToolStripMenuItem.Text = "Остановить дампинг";
             this.miStopDumpToolStripMenuItem.Click += new System.EventHandler(this.miStopDumpToolStripMenuItem_Click);
             // 
+            // columnHeaderChunkProcessingTime
+            // 
+            this.columnHeaderChunkProcessingTime.Text = "Обработка чанка";
+            this.columnHeaderChunkProcessingTime.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeaderChunkProcessingTime.Width = 70;
+            // 
+            // columnHeaderChunkSize
+            // 
+            this.columnHeaderChunkSize.Text = "Размер чанка";
+            this.columnHeaderChunkSize.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeaderChunkSize.Width = 90;
+            // 
+            // columnHeaderStatus
+            // 
+            this.columnHeaderStatus.Text = "Состояние";
+            this.columnHeaderStatus.Width = 100;
+            // 
+            // columnHeaderPlaylistErrors
+            // 
+            this.columnHeaderPlaylistErrors.Text = "Ошибки плейлиста";
+            this.columnHeaderPlaylistErrors.Width = 70;
+            // 
+            // columnHeaderOtherErrors
+            // 
+            this.columnHeaderOtherErrors.Text = "Другие ошибки";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -679,5 +715,10 @@ namespace Twitch_watchman
         private System.Windows.Forms.CheckBox checkBoxSaveChunksInfo;
         private System.Windows.Forms.CheckBox checkBoxStopIfPlaylistLost;
         private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.ColumnHeader columnHeaderChunkProcessingTime;
+        private System.Windows.Forms.ColumnHeader columnHeaderChunkSize;
+        private System.Windows.Forms.ColumnHeader columnHeaderStatus;
+        private System.Windows.Forms.ColumnHeader columnHeaderPlaylistErrors;
+        private System.Windows.Forms.ColumnHeader columnHeaderOtherErrors;
     }
 }

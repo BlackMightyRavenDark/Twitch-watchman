@@ -380,7 +380,7 @@ namespace Twitch_watchman
                         OnDumpingStarted, OnDumpingProgress, OnChannelCheckingCompleted,
                         OnTitleDetected, OnTitleChanged, OnLogMessage,
                         OnPlaylistCheckingStarted, OnPlaylistCheckingCompleted, OnNextChunkArrived, null,
-                        null, OnLogMessage, null, null, OnDumpingFinished,
+                        null, null, null, null, OnDumpingFinished,
                         playlistCheckingIntervalMilliseconds, saveChunksInfo,
                         maxPlaylistErrorCountInRow, otherErrorCountInRow);
                 });

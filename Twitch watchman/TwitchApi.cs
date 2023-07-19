@@ -39,15 +39,15 @@ namespace Twitch_watchman
         /// <summary>
         /// WARNING!!! Do not use this body if you are signed in!!!
         /// </summary>
-        public static JArray GenerateChannelTokenRequestBody(string userLogin)
+        public static JObject GeneratePlaybackAccessTokenRequestBody(string userLogin)
         {
-            const string hashValue = "0828119ded1c13477966434e15800ff57ddacf13ba1911c129dc2200705b0712";
-            JObject jPersistedQuery = new JObject();
-            jPersistedQuery["version"] = 1;
-            jPersistedQuery["sha256Hash"] = hashValue;
-
-            JObject jExtensions = new JObject();
-            jExtensions.Add(new JProperty("persistedQuery", jPersistedQuery));
+            const string queryString = "query PlaybackAccessToken_Template($login: String!, $isLive: Boolean!, " +
+                "$vodID: ID!, $isVod: Boolean!, $playerType: String!) " +
+                "{  streamPlaybackAccessToken(channelName: $login, params: " +
+                "{platform: \"web\", playerBackend: \"mediaplayer\", playerType: $playerType}) " +
+                "@include(if: $isLive) {    value    signature    __typename  }  " +
+                "videoPlaybackAccessToken(id: $vodID, params: {platform: \"web\", playerBackend: " +
+                "\"mediaplayer\", playerType: $playerType}) @include(if: $isVod) {    value    signature    __typename  }}";
 
             JObject jVariables = new JObject();
             jVariables["isLive"] = true;
@@ -57,12 +57,11 @@ namespace Twitch_watchman
             jVariables["playerType"] = "site";
 
             JObject json = new JObject();
-            json["operationName"] = "PlaybackAccessToken";
-            json.Add(new JProperty("extensions", jExtensions));
+            json["operationName"] = "PlaybackAccessToken_Template";
+            json["query"] = queryString;
             json.Add(new JProperty("variables", jVariables));
 
-            JArray jsonArr = new JArray() { json };
-            return jsonArr;
+            return json;
         }
 
         public static string GetUserInfoRequestUrl_Helix(string userLogin)
@@ -77,42 +76,42 @@ namespace Twitch_watchman
             return url;
         }
 
-        public int GetChannelAccessToken(string channelName, out string response)
+        public int GetPlaybackAccessToken(string channelName, out string response)
         {
-            response = null;
-            JArray body = GenerateChannelTokenRequestBody(channelName);
-            TwitchClientIntegrity integrity = new TwitchClientIntegrity();
-            int errorCode = integrity.Update(body);
-            if (errorCode == 200)
-            {
-                NameValueCollection headers = new NameValueCollection();
-                headers.Add("User-Agent", USER_AGENT);
-                headers.Add("Host", "gql.twitch.tv");
-                headers.Add("Client-ID", TWITCH_CLIENT_ID_PRIVATE);
-                headers.Add("Client-Session-Id", integrity.DeviceId.ToString());
-                headers.Add("Client-Integrity", integrity.Token);
+            JObject body = GeneratePlaybackAccessTokenRequestBody(channelName);
 
-                errorCode = HttpsPost(TWITCH_GQL_API_URL, body.ToString(), headers, out response);
-            }
-            return errorCode;
+            /*
+             * Заголовок "Device-ID" нужен для предотвращения показа рекламы в начале видео.
+             * Если этого заголовка нет, твич вставляет 15-секундную рекламную вставку в начало каждого плейлиста.
+             * TODO: Каким-то образом получить правильное значение "deviceId" из API.
+             */
+            Guid deviceId = Guid.NewGuid();
+
+            NameValueCollection headers = new NameValueCollection();
+            headers.Add("User-Agent", USER_AGENT);
+            headers.Add("Host", "gql.twitch.tv");
+            headers.Add("Client-ID", TWITCH_CLIENT_ID_PRIVATE);
+            headers.Add("Content-Type", "text/plain; charset=UTF-8");
+            headers.Add("Device-ID", deviceId.ToString());
+
+            return HttpsPost(TWITCH_GQL_API_URL, body.ToString(), headers, out response);
         }
 
         public bool ParseChannelToken(string unparsedChannelToken, out string token, out string signature)
         {
-            JArray json = JArray.Parse(unparsedChannelToken);
-            if (json.Count > 0)
+            try
             {
-                JObject jData = json[0].Value<JObject>("data");
-                if (jData != null)
+                JObject json = JObject.Parse(unparsedChannelToken);
+                JObject jToken = json.Value<JObject>("data")?.Value<JObject>("streamPlaybackAccessToken");
+                if (jToken != null)
                 {
-                    JObject jToken = jData.Value<JObject>("streamPlaybackAccessToken");
-                    if (jToken != null)
-                    {
-                        token = Uri.EscapeDataString(jToken.Value<string>("value"));
-                        signature = jToken.Value<string>("signature");
-                        return true;
-                    }
+                    token = Uri.EscapeDataString(jToken.Value<string>("value"));
+                    signature = jToken.Value<string>("signature");
+                    return true;
                 }
+            } catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.Message);
             }
 
             token = null;
@@ -122,7 +121,7 @@ namespace Twitch_watchman
 
         public int GetLiveStreamManifestUrl(string channelName, out string manifestUrl)
         {
-            int errorCode = GetChannelAccessToken(channelName, out string unparsedToken);
+            int errorCode = GetPlaybackAccessToken(channelName, out string unparsedToken);
             if (errorCode == 200)
             {
                 if (!ParseChannelToken(unparsedToken, out string token, out string signature))
@@ -132,13 +131,8 @@ namespace Twitch_watchman
                 }
 
                 int randomInt = new Random((int)DateTime.UtcNow.Ticks).Next(999999);
-                string decodedToken = System.Web.HttpUtility.UrlDecode(token);
 
                 NameValueCollection query = System.Web.HttpUtility.ParseQueryString(string.Empty);
-                /*
-                 * Работает не всегда правильно (иногда выдаёт рекламу в начале видео).
-                 * TODO: Разобраться, почему так.
-                 */
                 query.Add("acmb", "e30=");
                 query.Add("allow_source", "true");
                 query.Add("fast_bread", "true");
@@ -148,13 +142,12 @@ namespace Twitch_watchman
                 query.Add("reassignments_supported", "true");
                 query.Add("sig", signature);
                 query.Add("supported_codecs", "avc1");
-                query.Add("token", decodedToken);
                 query.Add("transcode_mode", "cbr_v1");
                 query.Add("cdm", "wv");
                 query.Add("player_version", "1.20.0");
 
                 string usherUrl = string.Format(TWITCH_USHER_HLS_URL_TEMPLATE, channelName);
-                manifestUrl = $"{usherUrl}?{query}";
+                manifestUrl = $"{usherUrl}?{query}&token={token}";
             }
             else
             {
@@ -343,37 +336,6 @@ namespace Twitch_watchman
                     long expiresIn = j.Value<long>("expires_in");
                     ExpireDate = DateTime.Now.Add(TimeSpan.FromSeconds(expiresIn));
                 }
-            }
-            return errorCode;
-        }
-    }
-
-    public sealed class TwitchClientIntegrity
-    {
-        public string Token { get; private set; }
-        public long Expiration { get; private set; } = -1L;
-        public string RequestId { get; private set; }
-        public Guid DeviceId { get; private set; }
-
-        public const string INTEGRITY_API_URL = "https://gql.twitch.tv/integrity";
-
-        public int Update(JArray requestBody)
-        {
-            DeviceId = Guid.NewGuid();
-
-            NameValueCollection headers = new NameValueCollection();
-            headers.Add("User-Agent", USER_AGENT);
-            headers.Add("Host", "gql.twitch.tv");
-            headers.Add("Client-ID", TwitchApi.TWITCH_CLIENT_ID_PRIVATE);
-            headers.Add("X-Device-id", DeviceId.ToString());
-
-            int errorCode = HttpsPost(INTEGRITY_API_URL, requestBody.ToString(), headers, out string response);
-            if (errorCode == 200)
-            {
-                JObject j = JObject.Parse(response);
-                Token = j.Value<string>("token");
-                Expiration = j.Value<long>("expiration");
-                RequestId = j.Value<string>("request_id");
             }
             return errorCode;
         }

@@ -538,6 +538,8 @@ namespace Twitch_watchman
                 {
                     listViewStreams.Items[id].SubItems[COLUMN_ID_DELAY].Text =
                         $"{streamItem.Dumper.LastDelayValueMilliseconds}ms";
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_LOSTCHUNKS].Text =
+                        streamItem.Dumper.LostChunkCount.ToString();
                     listViewStreams.Items[id].SubItems[COLUMN_ID_STATUS].Text = "Плейлист проверен";
                     listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLISTERRORS].Text =
                         $"{playlistErrorCountInRow} / {streamItem.Dumper.PlaylistErrorCountInRowMax}";
@@ -685,6 +687,11 @@ namespace Twitch_watchman
 
                     listViewStreams.Items[id].SubItems[COLUMN_ID_STATUS].Text =
                         errorCode == HlsDumper.DUMPING_ERROR_CANCELED ? "Отменён" : "Завершён";
+                    if (streamItem.Dumper.LostChunkCount > 0)
+                    {
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_LOSTCHUNKS].Text =
+                            streamItem.Dumper.LostChunkCount.ToString();
+                    }
                 }
             }
         }

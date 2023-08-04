@@ -189,23 +189,23 @@ namespace Twitch_watchman
                             playlistCheckingIntervalMilliseconds,
                             saveChunksInfo, maxPlaylistErrorCountInRow, maxOtherErrorsInRow);
                     }
+
+                    StreamItem.Title = jStreamInfo.Value<string>("title");
+                    titleDetected?.Invoke(this, StreamItem.Title);
+
+                    string dateFormatted = StreamItem.DateLocal.ToString("yyyy.MM.dd, HH:mm:ss");
+                    string titlesFp = StreamItem.DumpingFilePath + "_titles.txt";
+                    File.AppendAllText(titlesFp, $"{dateFormatted}={StreamItem.Title}{Environment.NewLine}");
+
+                    if (SaveStreamInfo)
+                    {
+                        string infoFp = StreamItem.DumpingFilePath + "_info.json";
+                        File.WriteAllText(infoFp, jStreamInfo.ToString());
+                    }
                 }
                 else
                 {
                     dumpingStarted?.Invoke(this, LastErrorCode);
-                }
-
-                StreamItem.Title = jStreamInfo.Value<string>("title");
-                titleDetected?.Invoke(this, StreamItem.Title);
-
-                string dateFormatted = StreamItem.DateLocal.ToString("yyyy.MM.dd, HH:mm:ss");
-                string titlesFp = StreamItem.DumpingFilePath + "_titles.txt";
-                File.AppendAllText(titlesFp, $"{dateFormatted}={StreamItem.Title}{Environment.NewLine}");
-
-                if (SaveStreamInfo)
-                {
-                    string infoFp = StreamItem.DumpingFilePath + "_info.json";
-                    File.WriteAllText(infoFp, jStreamInfo.ToString());
                 }
             }
             else //стрим уже идёт.

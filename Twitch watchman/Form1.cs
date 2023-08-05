@@ -19,16 +19,22 @@ namespace Twitch_watchman
         private const int COLUMN_ID_FILESIZE = 3;
         private const int COLUMN_ID_DELAY = 4;
         private const int COLUMN_ID_CHUNKPROCESSINGTIME = 5;
-        private const int COLUMN_ID_CHUNKSIZE = 6;
-        private const int COLUMN_ID_NEWCHUNKS = 7;
-        private const int COLUMN_ID_PROCESSEDCHUNKS = 8;
-        private const int COLUMN_ID_FIRSTCHUNKID = 9;
-        private const int COLUMN_ID_LOSTCHUNKS = 10;
-        private const int COLUMN_ID_DUMPSTARTDATE = 11;
-        private const int COLUMN_ID_STATUS = 12;
-        private const int COLUMN_ID_PLAYLISTERRORS = 13;
-        private const int COLUMN_ID_OTHERERRORS = 14;
-        private const int COLUMN_ID_PLAYLIST_URL = 15;
+        private const int COLUMN_ID_NEWCHUNKS = 6;
+        private const int COLUMN_ID_CHUNKID = 7;
+        private const int COLUMN_ID_CHUNKLENGTH = 8;
+        private const int COLUMN_ID_CHUNKSIZE = 9;
+        private const int COLUMN_ID_CHUNKFILENAME = 10;
+        private const int COLUMN_ID_CHUNKURL = 11;
+        private const int COLUMN_ID_PROCESSEDCHUNKS = 12;
+        private const int COLUMN_ID_FIRSTCHUNKID = 13;
+        private const int COLUMN_ID_LOSTCHUNKS = 14;
+        private const int COLUMN_ID_PLAYLISTERRORS = 15;
+        private const int COLUMN_ID_CHUNKDOWNLOADERRORS = 16;
+        private const int COLUMN_ID_CHUNKAPPENDERRORS = 17;
+        private const int COLUMN_ID_OTHERERRORS = 18;
+        private const int COLUMN_ID_DUMPSTARTDATE = 19;
+        private const int COLUMN_ID_STATUS = 20;
+        private const int COLUMN_ID_PLAYLIST_URL = 21;
 
         private bool _isClosing = false;
 
@@ -323,9 +329,16 @@ namespace Twitch_watchman
             item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
             item.SubItems.Add("Остановлено");
-            item.SubItems.Add(string.Empty);
-            item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
             item.Tag = streamItem;
             listViewStreams.Items.Add(item);
@@ -347,15 +360,21 @@ namespace Twitch_watchman
                 listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_DELAY].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKPROCESSINGTIME].Text = null;
-                listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKSIZE].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_NEWCHUNKS].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKID].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKLENGTH].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKSIZE].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKURL].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKFILENAME].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_PROCESSEDCHUNKS].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_FIRSTCHUNKID].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_LOSTCHUNKS].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLISTERRORS].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKDOWNLOADERRORS].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKAPPENDERRORS].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_OTHERERRORS].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_DUMPSTARTDATE].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_STATUS].Text = "Остановлено";
-                listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLISTERRORS].Text = null;
-                listViewStreams.Items[id].SubItems[COLUMN_ID_OTHERERRORS].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLIST_URL].Text = null;
             }
         }
@@ -376,11 +395,12 @@ namespace Twitch_watchman
                 {
                     ChannelChecker checker = new ChannelChecker(streamItem, config.SaveStreamInfo);
                     checker.Check(OnChannelCheckingStarted, OnNewLiveDetected,
-                        OnPlaylistUrlDetected, OnPlaylistFirstArrived,
+                        OnPlaylistUrlDetected, OnPlaylistFirstArrived, null, null,
                         OnDumpingStarted, OnDumpingProgress, OnChannelCheckingCompleted,
                         OnTitleDetected, OnTitleChanged, OnLogMessage,
-                        OnPlaylistCheckingStarted, OnPlaylistCheckingCompleted, OnNextChunkArrived, null,
-                        null, null, null, null, OnDumpingFinished,
+                        OnPlaylistCheckingStarted, OnPlaylistCheckingCompleted,
+                        OnPlaylistCheckingDelayCalculated, OnNextChunkArrived, null,
+                        null, null, null, null, OnDumpingFinished, OnUpdateErrors,
                         playlistCheckingIntervalMilliseconds, saveChunksInfo,
                         maxPlaylistErrorCountInRow, otherErrorCountInRow);
                 });
@@ -435,7 +455,7 @@ namespace Twitch_watchman
             }
         }
 
-        private void OnPlaylistFirstArrived(object sender, int chunkCount, long firstChunkId)
+        private void OnPlaylistFirstArrived(object sender, int chunkCount, int firstChunkId)
         {
             if (InvokeRequired)
             {
@@ -518,7 +538,7 @@ namespace Twitch_watchman
         }
 
         public void OnPlaylistCheckingCompleted(object sender,
-            int chunkCount, int newChunkCount, long firstChunkId, long firstNewChunkId,
+            int chunkCount, int newChunkCount, int firstChunkId, int firstNewChunkId,
             string playlistContent, int errorCode, int playlistErrorCountInRow)
         {
             if (InvokeRequired)
@@ -536,27 +556,45 @@ namespace Twitch_watchman
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
                 if (id >= 0)
                 {
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_STATUS].Text = "Плейлист проверен";
-                    if (streamItem.IsStreamActive)
-                    {
-                        listViewStreams.Items[id].SubItems[COLUMN_ID_DELAY].Text =
-                            $"{streamItem.Dumper.LastDelayValueMilliseconds}ms";
-                        listViewStreams.Items[id].SubItems[COLUMN_ID_LOSTCHUNKS].Text =
-                            streamItem.Dumper.LostChunkCount.ToString();
-                        listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLISTERRORS].Text =
-                            $"{playlistErrorCountInRow} / {streamItem.Dumper.PlaylistErrorCountInRowMax}";
-                        listViewStreams.Items[id].SubItems[COLUMN_ID_OTHERERRORS].Text =
-                            $"{streamItem.Dumper.OtherErrorCountInRow} / {streamItem.Dumper.OtherErrorCountInRowMax}";
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_NEWCHUNKS].Text =
+                        $"{newChunkCount} / {chunkCount}";
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLISTERRORS].Text =
+                        $"{playlistErrorCountInRow} / {streamItem.Dumper.PlaylistErrorCountInRowMax}";
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_STATUS].Text =
+                        $"Плейлист проверен (код: {errorCode})";
 
-                        if (newChunkCount <= 0)
-                        {
-                            listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKPROCESSINGTIME].Text = null;
-                        }
-                    }
-                    else
+                    if (newChunkCount <= 0)
                     {
-                        listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLISTERRORS].Text = playlistErrorCountInRow.ToString();
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKPROCESSINGTIME].Text = null;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKID].Text = null;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKLENGTH].Text = null;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKSIZE].Text = null;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKFILENAME].Text = null;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKURL].Text = null;
                     }
+                }
+            }
+        }
+
+        public void OnPlaylistCheckingDelayCalculated(object sender,
+            int delay, int checkingInterval, int cycleProcessingTime)
+        {
+            if (InvokeRequired)
+            {
+                Invoke((MethodInvoker)delegate
+                {
+                    OnPlaylistCheckingDelayCalculated(sender,
+                        delay, checkingInterval, cycleProcessingTime);
+                });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
+                {
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_DELAY].Text =
+                        $"{delay}ms / {checkingInterval}ms";
                 }
             }
         }
@@ -600,7 +638,7 @@ namespace Twitch_watchman
                         listViewStreams.Items[id].SubItems[COLUMN_ID_FILEPATH].Text = streamItem.DumpingFilePath;
                         listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = "0";
                         listViewStreams.Items[id].SubItems[COLUMN_ID_NEWCHUNKS].Text = null;
-                        listViewStreams.Items[id].SubItems[COLUMN_ID_PROCESSEDCHUNKS].Text = null;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_PROCESSEDCHUNKS].Text = "0";
                         listViewStreams.Items[id].SubItems[COLUMN_ID_LOSTCHUNKS].Text = "0";
                         listViewStreams.Items[id].SubItems[COLUMN_ID_DUMPSTARTDATE].Text = streamItem.DateLocal.ToString();
                     }
@@ -632,24 +670,20 @@ namespace Twitch_watchman
                 if (id >= 0)
                 {
                     listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = FormatSize(fileSize);
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_NEWCHUNKS].Text =
-                        $"{streamItem.Dumper.CurrentPlaylistNewChunkCount} / {streamItem.Dumper.CurrentPlaylistChunkCount}";
-                    listViewStreams.Items[id].SubItems[COLUMN_ID_PROCESSEDCHUNKS].Text =
-                        streamItem.Dumper.ProcessedChunkCountTotal.ToString();
                     listViewStreams.Items[id].SubItems[COLUMN_ID_STATUS].Text = "Дампинг...";
                 }
             }
         }
 
-        public void OnNextChunkArrived(object sender, long absoluteChunkId, long sessionChunkId,
-            long chunkSize, int chunkProcessingTime, string chunkUrl)
+        public void OnNextChunkArrived(object sender, StreamSegment chunk,
+            long chunkSize, int sessionChunkId, int chunkProcessingTime)
         {
             if (InvokeRequired)
             {
                 Invoke((MethodInvoker)delegate
                 {
-                    OnNextChunkArrived(sender, absoluteChunkId, sessionChunkId,
-                        chunkSize, chunkProcessingTime, chunkUrl);
+                    OnNextChunkArrived(sender, chunk, chunkSize,
+                        sessionChunkId, chunkProcessingTime);
                 });
             }
             else
@@ -662,6 +696,26 @@ namespace Twitch_watchman
                         $"{chunkProcessingTime}ms";
                     listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKSIZE].Text =
                         FormatSize(chunkSize);
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_PROCESSEDCHUNKS].Text =
+                        (sessionChunkId + 1).ToString();
+                    if (chunk != null)
+                    {
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKID].Text =
+                            chunk.Id.ToString();
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKLENGTH].Text =
+                            $"{chunk.LengthSeconds} сек.";
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKFILENAME].Text =
+                            chunk.FileName;
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKURL].Text =
+                            chunk.Url;
+                    }
+                    else
+                    {
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKID].Text = "null";
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKLENGTH].Text = "null";
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKFILENAME].Text = "null";
+                        listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKURL].Text = "null";
+                    }
                 }
             }
         }
@@ -747,6 +801,41 @@ namespace Twitch_watchman
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 AddToLog(streamItem.ChannelName, messageText);
+            }
+        }
+
+        private void OnUpdateErrors(object sender,
+            int playlistErrorCountInRow, int playlistErrorCountInRowMax,
+            int otherErrorCountInRow, int otherErrorCountInRowMax,
+            int chunkDownloadErrorCount, int chunkAppendErrorCount,
+            int lostChunkCount)
+        {
+            if (InvokeRequired)
+            {
+                Invoke((MethodInvoker)delegate
+                {
+                    OnUpdateErrors(sender, playlistErrorCountInRow, playlistErrorCountInRowMax,
+                        otherErrorCountInRow, otherErrorCountInRowMax,
+                        chunkDownloadErrorCount, chunkAppendErrorCount, lostChunkCount);
+                });
+            }
+            else
+            {
+                StreamItem streamItem = (sender as ChannelChecker).StreamItem;
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
+                {
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLISTERRORS].Text =
+                        $"{playlistErrorCountInRow} / {playlistErrorCountInRowMax}";
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKDOWNLOADERRORS].Text =
+                        chunkDownloadErrorCount.ToString();
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKAPPENDERRORS].Text =
+                        chunkAppendErrorCount.ToString();
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_OTHERERRORS].Text =
+                        $"{otherErrorCountInRow} / {otherErrorCountInRowMax}";
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_LOSTCHUNKS].Text =
+                        lostChunkCount.ToString();
+                }
             }
         }
 

@@ -33,7 +33,9 @@ namespace Twitch_watchman
             ChannelCheckingStartedDelegate channelCheckingStarted,
             NewLiveDetectedDelegate newLiveDetected,
             PlaylistUrlDetectedDelegate playlistUrlDetected,
-            PlaylistFirstArrived playlistFirstArrived,
+            PlaylistFirstArrivedDelegate playlistFirstArrived,
+            OutputStreamAssignedDelegate outputStreamAssigned,
+            OutputStreamClosedDelegate outputStreamClosed,
             DumpingStartedDelegate dumpingStarted,
             DumpProgressDelegate dumpingProgress,
             ChannelCheckingCompletedDelegate channelCheckingCompleted,
@@ -42,6 +44,7 @@ namespace Twitch_watchman
             LogMessageDelegate logMessage,
             PlaylistCheckingDelegate dumperPlaylistChecking,
             PlaylistCheckedDelegate playlistChecked,
+            PlaylistCheckingDelayCalculatedDelegate playlistCheckingDelayCalculated,
             NextChunkArrivedDelegate dumperNextChunkArrived,
             ChunkDownloadFailedDelegate dumperChunkDownloadFailed,
             ChunkAppendFailedDelegate dumperChunkAppendFailed,
@@ -49,6 +52,7 @@ namespace Twitch_watchman
             DumpWarningDelegate dumperDumpWarning,
             DumpErrorDelegate dumperDumpError,
             DumpFinishedDelegate dumperDumpFinished,
+            UpdateErrorsDelegate updateErrors,
             int playlistCheckingIntervalMilliseconds,
             bool saveChunksInfo,
             int maxPlaylistErrorCountInRow,
@@ -169,8 +173,20 @@ namespace Twitch_watchman
                                         firstNewChunkId, playlistContent, errorCode, playlistErrorCountInRow);
                                 },
                             (s, chunkCount, firstChunkId) => { playlistFirstArrived?.Invoke(this, chunkCount, firstChunkId); },
-                            (s, absoluteChunkId, sessionChunkId, chunkSize, chunkProcessingTime, chunkUrl) =>
-                                { dumperNextChunkArrived?.Invoke(this, absoluteChunkId, sessionChunkId, chunkSize, chunkProcessingTime, chunkUrl); },
+                            (s, stream, fn) => { outputStreamAssigned?.Invoke(this, stream, fn); },
+                            (s, fn) => { outputStreamClosed?.Invoke(this, fn); },
+                            (s, delay, checkingInterval, cycleProcessingTime) =>
+                                { playlistCheckingDelayCalculated?.Invoke(this, delay, checkingInterval, cycleProcessingTime); },
+                            (s, chunk, chunkSize, sessionChunkId, chunkProcessingTime) =>
+                                { dumperNextChunkArrived?.Invoke(this, chunk, chunkSize, sessionChunkId, chunkProcessingTime); },
+                            (s, playlistErrorCountInRow, playlistErrorCountInRowMax,
+                            otherErrorCountInRow, otherErrorCountInRowMax,
+                            chunkDownloadErrorCount, chunkAppendErrorCount, lostChunkCount) =>
+                            {
+                                updateErrors?.Invoke(this, playlistErrorCountInRow, playlistErrorCountInRowMax,
+                                    otherErrorCountInRow, otherErrorCountInRowMax,
+                                    chunkDownloadErrorCount, chunkAppendErrorCount, lostChunkCount);
+                            },
                             (s, fs, code) =>
                             {
                                 StreamItem.DumpingFileSize = fs;

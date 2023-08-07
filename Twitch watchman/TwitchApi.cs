@@ -2,6 +2,7 @@
 using System.Collections.Specialized;
 using System.IO;
 using Newtonsoft.Json.Linq;
+using MultiThreadedDownloaderLib;
 using static Twitch_watchman.Utils;
 
 namespace Twitch_watchman
@@ -193,45 +194,34 @@ namespace Twitch_watchman
             return res;
         }
 
-        public int IsUserLive_Helix(string userId, out string resJson)
+        public int IsUserLive_Helix(string userId, out string response)
         {
+            response = null;
             string url = GetUserIsLiveRequestUrl_Helix(userId);
-            int res = HttpsGet_Helix(url, out string buf);
-            if (res == 200)
+            int errorCode = HttpsGet_Helix(url, out string buffer);
+            if (errorCode == 200)
             {
-                JObject j = JObject.Parse(buf);
+                JObject j = JObject.Parse(buffer);
                 JArray ja = j.Value<JArray>("data");
-                if (ja.Count > 0)
-                {
-                    resJson = buf;
-                    return 200;
-                }
-                else
-                {
-                    resJson = null;
-                    return ERROR_USER_OFFLINE;
-                }
+                response = buffer;
+                return ja.Count > 0 ? 200 : ERROR_USER_OFFLINE;
             }
-            else
-            {
-                resJson = null;
-            }
-            return res;
+
+            return errorCode;
         }
 
-        public int HttpsGet_Helix(string url, out string recvText)
+        public int HttpsGet_Helix(string url, out string response)
         {
             int errorCode = GetHelixOauthToken(out string token);
             if (errorCode == 200)
             {
-                FileDownloader d = new FileDownloader();
-                d.Url = url;
+                FileDownloader d = new FileDownloader() { Url = url };
                 d.Headers.Add("Client-ID", TWITCH_CLIENT_ID);
                 d.Headers.Add("Authorization", "Bearer " + token);
-                errorCode = d.DownloadString(out recvText);
-                return errorCode;
+                return d.DownloadString(out response);
             }
-            recvText = null;
+
+            response = null;
             return errorCode;
         }
 

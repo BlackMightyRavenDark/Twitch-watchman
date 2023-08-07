@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Newtonsoft.Json.Linq;
+using MultiThreadedDownloaderLib;
 using HlsDumpLib;
 using static HlsDumpLib.HlsDumper;
 using static Twitch_watchman.Utils;
@@ -157,7 +158,7 @@ namespace Twitch_watchman
                 StreamItem.PlaylistUrl = playlistUrl;
                 playlistUrlDetected?.Invoke(this, playlistUrl);
 
-                LastErrorCode = FileDownloader.GetContentLength(playlistUrl, out _);
+                LastErrorCode = FileDownloader.GetUrlResponseHeaders(playlistUrl, null, out _, out _);
                 if (LastErrorCode == 200)
                 {
                     if (StreamItem.Dumper == null)

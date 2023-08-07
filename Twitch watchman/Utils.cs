@@ -3,18 +3,17 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
-using System.Net;
 using System.Reflection;
-using System.Text;
 using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
+using MultiThreadedDownloaderLib;
 using HlsDumpLib;
 
 namespace Twitch_watchman
 {
     public static class Utils
     {
-        public const string FILENAME_FORMAT_DEFAULT = 
+        public const string FILENAME_FORMAT_DEFAULT =
             "hlsdump_twitch_<channelName>_<year>-<month>-<day>_<hour>h<minute>m<second>s<millisecond>ms";
         public const int MAX_LOG_COUNT = 1000;
 
@@ -74,158 +73,33 @@ namespace Twitch_watchman
 
         public static int HttpsPost(string url, out string responseString)
         {
-            try
-            {
-                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
-                httpWebRequest.Method = "POST";
-                HttpWebResponse httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-                using (StreamReader streamReader = new StreamReader(httpResponse.GetResponseStream()))
-                {
-                    responseString = streamReader.ReadToEnd();
-                    return (int)httpResponse.StatusCode;
-                }
-            }
-            catch (WebException ex)
-            {
-                if (ex.Status == WebExceptionStatus.ProtocolError)
-                {
-                    HttpWebResponse httpWebResponse = (HttpWebResponse)ex.Response;
-                    responseString = ex.Message;
-                    return (int)httpWebResponse.StatusCode;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.Message);
-            }
-
-            responseString = "Client error";
-            return 400;
+            return HttpsPost(url, null, null, out responseString);
         }
 
         public static int HttpsPost(string url, string body, NameValueCollection headers, out string responseString)
         {
-            responseString = "Client error";
-            int res = 400;
             try
             {
-                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
-                if (!string.IsNullOrEmpty(body))
+                using (HttpRequestResult requestResult = HttpRequestSender.Send("POST", url, body, headers))
                 {
-                    byte[] buffer = Encoding.ASCII.GetBytes(body);
-                    httpWebRequest.ContentLength = buffer.Length;
-                }
-                else
-                {
-                    httpWebRequest.ContentLength = 0;
-                }
-
-                if (headers != null)
-                {
-                    SetRequestHeaders(httpWebRequest, headers);
-                }
-
-                httpWebRequest.Method = "POST";
-
-                using (StreamWriter streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
-                {
-                    streamWriter.Write(body);
-                }
-                HttpWebResponse httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-                try
-                {
-                    using (StreamReader streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                    if (requestResult.ErrorCode == 200)
                     {
-                        responseString = streamReader.ReadToEnd();
-                        res = (int)httpResponse.StatusCode;
+                        if (requestResult.WebContent == null)
+                        {
+                            responseString = null;
+                            return 404;
+                        }
+                        return requestResult.WebContent.ContentToString(out responseString);
                     }
+
+                    responseString = requestResult.ErrorMessage;
+                    return requestResult.ErrorCode;
                 }
-                catch (WebException ex)
-                {
-                    if (ex.Status == WebExceptionStatus.ProtocolError)
-                    {
-                        HttpWebResponse httpWebResponse = (HttpWebResponse)ex.Response;
-                        responseString = ex.Message;
-                        res = (int)httpWebResponse.StatusCode;
-                    }
-                }
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(ex.Message);
-                res = ex.HResult;
-            }
-            return res;
-        }
-
-        public static void SetRequestHeaders(HttpWebRequest request, NameValueCollection headers)
-        {
-            request.Headers.Clear();
-            for (int i = 0; i < headers.Count; ++i)
-            {
-                string headerName = headers.GetKey(i);
-                string headerValue = headers.Get(i);
-                string headerNameLowercased = headerName.ToLower();
-
-                //TODO: Complete headers support.
-                if (headerNameLowercased.Equals("accept"))
-                {
-                    request.Accept = headerValue;
-                    continue;
-                }
-                else if (headerNameLowercased.Equals("user-agent"))
-                {
-                    request.UserAgent = headerValue;
-                    continue;
-                }
-                else if (headerNameLowercased.Equals("referer"))
-                {
-                    request.Referer = headerValue;
-                    continue;
-                }
-                else if (headerNameLowercased.Equals("host"))
-                {
-                    request.Host = headerValue;
-                    continue;
-                }
-                else if (headerNameLowercased.Equals("content-type"))
-                {
-                    request.ContentType = headerValue;
-                    continue;
-                }
-                else if (headerNameLowercased.Equals("content-length"))
-                {
-                    if (long.TryParse(headerValue, out long length))
-                    {
-                        request.ContentLength = length;
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine("Can't parse value of \"Content-Length\" header!");
-                    }
-                    continue;
-                }
-                else if (headerNameLowercased.Equals("connection"))
-                {
-                    System.Diagnostics.Debug.WriteLine("The \"Connection\" header is not supported yet.");
-                    continue;
-                }
-                else if (headerNameLowercased.Equals("range"))
-                {
-                    continue;
-                }
-                else if (headerNameLowercased.Equals("if-modified-since"))
-                {
-                    System.Diagnostics.Debug.WriteLine("The \"If-Modified-Since\" header is not supported yet.");
-                    continue;
-                }
-                else if (headerNameLowercased.Equals("transfer-encoding"))
-                {
-                    System.Diagnostics.Debug.WriteLine("The \"Transfer-Encoding\" header is not supported yet.");
-                    continue;
-                }
-
-                request.Headers.Add(headerName, headerValue);
+                responseString = null;
+                return 400;
             }
         }
 

@@ -77,9 +77,9 @@ namespace Twitch_watchman
             this.label1 = new System.Windows.Forms.Label();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.listViewLog = new System.Windows.Forms.ListView();
-            this.columnHeader7 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader8 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader9 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderLogDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderLogChannel = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderLogEvent = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.timerCheck = new System.Windows.Forms.Timer(this.components);
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -387,7 +387,7 @@ namespace Twitch_watchman
             this.groupBox3.Controls.Add(this.label5);
             this.groupBox3.Location = new System.Drawing.Point(3, 114);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(757, 81);
+            this.groupBox3.Size = new System.Drawing.Size(740, 81);
             this.groupBox3.TabIndex = 6;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Частота проверки";
@@ -468,7 +468,7 @@ namespace Twitch_watchman
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Location = new System.Drawing.Point(3, 3);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(757, 105);
+            this.groupBox2.Size = new System.Drawing.Size(740, 105);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Файлы и папки";
@@ -476,7 +476,7 @@ namespace Twitch_watchman
             // btnSetDefaultFileNameFormat
             // 
             this.btnSetDefaultFileNameFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSetDefaultFileNameFormat.Location = new System.Drawing.Point(642, 74);
+            this.btnSetDefaultFileNameFormat.Location = new System.Drawing.Point(625, 74);
             this.btnSetDefaultFileNameFormat.Name = "btnSetDefaultFileNameFormat";
             this.btnSetDefaultFileNameFormat.Size = new System.Drawing.Size(109, 23);
             this.btnSetDefaultFileNameFormat.TabIndex = 8;
@@ -490,7 +490,7 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxFileNameFormat.Location = new System.Drawing.Point(15, 76);
             this.textBoxFileNameFormat.Name = "textBoxFileNameFormat";
-            this.textBoxFileNameFormat.Size = new System.Drawing.Size(621, 20);
+            this.textBoxFileNameFormat.Size = new System.Drawing.Size(604, 20);
             this.textBoxFileNameFormat.TabIndex = 7;
             this.textBoxFileNameFormat.Leave += new System.EventHandler(this.textBoxFileNameFormat_Leave);
             // 
@@ -506,7 +506,7 @@ namespace Twitch_watchman
             // btnBrowseDownloadingDirectory
             // 
             this.btnBrowseDownloadingDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(710, 35);
+            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(693, 35);
             this.btnBrowseDownloadingDirectory.Name = "btnBrowseDownloadingDirectory";
             this.btnBrowseDownloadingDirectory.Size = new System.Drawing.Size(41, 23);
             this.btnBrowseDownloadingDirectory.TabIndex = 4;
@@ -520,7 +520,7 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxDownloadingDir.Location = new System.Drawing.Point(16, 37);
             this.textBoxDownloadingDir.Name = "textBoxDownloadingDir";
-            this.textBoxDownloadingDir.Size = new System.Drawing.Size(688, 20);
+            this.textBoxDownloadingDir.Size = new System.Drawing.Size(671, 20);
             this.textBoxDownloadingDir.TabIndex = 0;
             this.textBoxDownloadingDir.Leave += new System.EventHandler(this.textBoxDownloadingDir_Leave);
             // 
@@ -550,9 +550,9 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.listViewLog.BackColor = System.Drawing.SystemColors.Control;
             this.listViewLog.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.columnHeader7,
-            this.columnHeader8,
-            this.columnHeader9});
+            this.columnHeaderLogDate,
+            this.columnHeaderLogChannel,
+            this.columnHeaderLogEvent});
             this.listViewLog.FullRowSelect = true;
             this.listViewLog.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.listViewLog.HideSelection = false;
@@ -564,20 +564,20 @@ namespace Twitch_watchman
             this.listViewLog.UseCompatibleStateImageBehavior = false;
             this.listViewLog.View = System.Windows.Forms.View.Details;
             // 
-            // columnHeader7
+            // columnHeaderLogDate
             // 
-            this.columnHeader7.Text = "Дата батона";
-            this.columnHeader7.Width = 120;
+            this.columnHeaderLogDate.Text = "Дата батона";
+            this.columnHeaderLogDate.Width = 120;
             // 
-            // columnHeader8
+            // columnHeaderLogChannel
             // 
-            this.columnHeader8.Text = "Канал";
-            this.columnHeader8.Width = 120;
+            this.columnHeaderLogChannel.Text = "Канал";
+            this.columnHeaderLogChannel.Width = 120;
             // 
-            // columnHeader9
+            // columnHeaderLogEvent
             // 
-            this.columnHeader9.Text = "Событие";
-            this.columnHeader9.Width = 300;
+            this.columnHeaderLogEvent.Text = "Событие";
+            this.columnHeaderLogEvent.Width = 300;
             // 
             // timerCheck
             // 
@@ -726,9 +726,9 @@ namespace Twitch_watchman
         private System.Windows.Forms.Button btnAddNewStream;
         private System.Windows.Forms.TabPage tabPage3;
         private System.Windows.Forms.ListView listViewLog;
-        private System.Windows.Forms.ColumnHeader columnHeader7;
-        private System.Windows.Forms.ColumnHeader columnHeader8;
-        private System.Windows.Forms.ColumnHeader columnHeader9;
+        private System.Windows.Forms.ColumnHeader columnHeaderLogDate;
+        private System.Windows.Forms.ColumnHeader columnHeaderLogChannel;
+        private System.Windows.Forms.ColumnHeader columnHeaderLogEvent;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem miEditChannelToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem miCheckChannelToolStripMenuItem;

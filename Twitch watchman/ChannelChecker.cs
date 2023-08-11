@@ -117,7 +117,7 @@ namespace Twitch_watchman
             {
                 StreamItem.DateServer = newStreamDate;
                 StreamItem.DateLocal = DateTime.Now;
-                string filePath = $"{config.DownloadingDirPath}{FormatFileName(config.FileNameFormat, StreamItem)}.ts";
+                string filePath = config.DownloadingDirPath + FormatFileName(config.FileNameFormat, StreamItem);
                 StreamItem.DumpingFilePath = GetNumberedFileName(filePath);
                 StreamItem.DumpingFileSize = 0L;
                 newLiveDetected?.Invoke(this);

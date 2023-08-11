@@ -184,6 +184,18 @@ namespace Twitch_watchman
                 BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
                 null, control, new object[] { enabled });
         }
+
+        public static JObject TryParseJson(string jsonString)
+        {
+            try
+            {
+                return JObject.Parse(jsonString);
+            } catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+                return null;
+            }
+        }
     }
 
     public sealed class MainConfiguration
@@ -228,8 +240,8 @@ namespace Twitch_watchman
             LoadDefaults();
             if (File.Exists(FilePath))
             {
-                JObject json = JObject.Parse(File.ReadAllText(FilePath));
-                Loading?.Invoke(this, json);
+                JObject json = Utils.TryParseJson(File.ReadAllText(FilePath));
+                if (json != null && Loading != null) { Loading.Invoke(this, json); }
             }
         }
 

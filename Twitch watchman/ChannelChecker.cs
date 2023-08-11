@@ -16,6 +16,8 @@ namespace Twitch_watchman
         public string LastErrorMessage { get; private set; }
         private bool SaveStreamInfo { get; set; }
 
+        public const int ERROR_PARSE = -2000;
+
         public delegate void ChannelCheckingStartedDelegate(object sender);
         public delegate void ChannelCheckingCompletedDelegate(object sender, int errorCode);
         public delegate void NewLiveDetectedDelegate(object sender);
@@ -60,6 +62,9 @@ namespace Twitch_watchman
             int maxPlaylistErrorCountInRow,
             int maxOtherErrorsInRow)
         {
+            string downloadingDirPath = config.DownloadingDirPath;
+            string fileNameFormat = config.FileNameFormat;
+
             Task.Run(() =>
             {
                 channelCheckingStarted?.Invoke(this);
@@ -83,7 +88,15 @@ namespace Twitch_watchman
                     return;
                 }
 
-                JObject jsonLive = JObject.Parse(response);
+                JObject jsonLive = TryParseJson(response);
+                if (jsonLive == null)
+                {
+                    LastErrorCode = ERROR_PARSE;
+                    LastErrorMessage = "Data parse error!";
+                    channelCheckingCompleted?.Invoke(this, LastErrorCode);
+                    return;
+                }
+
                 JToken jt = jsonLive.Value<JToken>("data");
                 if (jt == null)
                 {
@@ -120,7 +133,7 @@ namespace Twitch_watchman
                 {
                     StreamItem.DateServer = newStreamDate;
                     StreamItem.DateLocal = DateTime.Now;
-                    string filePath = config.DownloadingDirPath + FormatFileName(config.FileNameFormat, StreamItem);
+                    string filePath = downloadingDirPath + FormatFileName(fileNameFormat, StreamItem);
                     StreamItem.DumpingFilePath = GetNumberedFileName(filePath);
                     StreamItem.DumpingFileSize = 0L;
                     newLiveDetected?.Invoke(this);

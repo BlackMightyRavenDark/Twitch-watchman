@@ -100,9 +100,9 @@ namespace Twitch_watchman
 
         public bool ParseChannelToken(string unparsedChannelToken, out string token, out string signature)
         {
-            try
+            JObject json = TryParseJson(unparsedChannelToken);
+            if (json != null)
             {
-                JObject json = JObject.Parse(unparsedChannelToken);
                 JObject jToken = json.Value<JObject>("data")?.Value<JObject>("streamPlaybackAccessToken");
                 if (jToken != null)
                 {
@@ -110,9 +110,6 @@ namespace Twitch_watchman
                     signature = jToken.Value<string>("signature");
                     return true;
                 }
-            } catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.Message);
             }
 
             token = null;
@@ -171,20 +168,27 @@ namespace Twitch_watchman
             int res = HttpsGet_Helix(req, out string buf);
             if (res == 200)
             {
-                JObject json = JObject.Parse(buf);
-                JArray ja = json.Value<JArray>("data");
-                if (ja != null && ja.Count > 0)
+                JObject json = TryParseJson(buf);
+                if (json != null)
                 {
-                    JObject j = ja[0].Value<JObject>();
-                    userInfo = new TwitchUserInfo();
-                    userInfo.DisplayName = j.Value<string>("display_name");
-                    userInfo.Id = j.Value<string>("id");
-                    errorMessage = null;
+                    JArray ja = json.Value<JArray>("data");
+                    if (ja != null && ja.Count > 0)
+                    {
+                        JObject j = ja[0].Value<JObject>();
+                        userInfo = new TwitchUserInfo();
+                        userInfo.DisplayName = j.Value<string>("display_name");
+                        userInfo.Id = j.Value<string>("id");
+                        errorMessage = null;
+                    }
+                    else
+                    {
+                        errorMessage = buf;
+                        return ERROR_USER_NOT_FOUND;
+                    }
                 }
                 else
                 {
-                    errorMessage = buf;
-                    return ERROR_USER_NOT_FOUND;
+                    errorMessage = "Data parse error!";
                 }
             }
             else
@@ -201,10 +205,13 @@ namespace Twitch_watchman
             int errorCode = HttpsGet_Helix(url, out string buffer);
             if (errorCode == 200)
             {
-                JObject j = JObject.Parse(buffer);
-                JArray ja = j.Value<JArray>("data");
-                response = buffer;
-                return ja.Count > 0 ? 200 : ERROR_USER_OFFLINE;
+                JObject j = TryParseJson(buffer);
+                if (j != null)
+                {
+                    JArray ja = j.Value<JArray>("data");
+                    response = buffer;
+                    return ja != null && ja.Count > 0 ? 200 : ERROR_USER_OFFLINE;
+                }
             }
 
             return errorCode;
@@ -234,6 +241,9 @@ namespace Twitch_watchman
 
                 case ERROR_USER_OFFLINE:
                     return "User offline";
+
+                case ChannelChecker.ERROR_PARSE:
+                    return "JSON parse error";
 
                 default:
                     return $"{errorCode} unknown";
@@ -317,7 +327,7 @@ namespace Twitch_watchman
                 errorCode = HttpsPost(req, out string buf);
                 if (errorCode == 200)
                 {
-                    JObject j = JObject.Parse(buf);
+                    JObject j = TryParseJson(buf);
                     if (j == null)
                     {
                         return 400;

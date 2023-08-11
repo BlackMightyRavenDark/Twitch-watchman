@@ -135,6 +135,7 @@ namespace Twitch_watchman
             // 
             // listViewStreams
             // 
+            this.listViewStreams.AllowColumnReorder = true;
             this.listViewStreams.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
@@ -163,7 +164,6 @@ namespace Twitch_watchman
             this.columnHeaderStatus,
             this.columnHeaderPlaylistUrl});
             this.listViewStreams.FullRowSelect = true;
-            this.listViewStreams.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.listViewStreams.HideSelection = false;
             this.listViewStreams.LabelWrap = false;
             this.listViewStreams.Location = new System.Drawing.Point(6, 35);
@@ -387,7 +387,7 @@ namespace Twitch_watchman
             this.groupBox3.Controls.Add(this.label5);
             this.groupBox3.Location = new System.Drawing.Point(3, 114);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(791, 81);
+            this.groupBox3.Size = new System.Drawing.Size(757, 81);
             this.groupBox3.TabIndex = 6;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Частота проверки";
@@ -468,7 +468,7 @@ namespace Twitch_watchman
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Location = new System.Drawing.Point(3, 3);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(791, 105);
+            this.groupBox2.Size = new System.Drawing.Size(757, 105);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Файлы и папки";
@@ -476,7 +476,7 @@ namespace Twitch_watchman
             // btnSetDefaultFileNameFormat
             // 
             this.btnSetDefaultFileNameFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSetDefaultFileNameFormat.Location = new System.Drawing.Point(676, 74);
+            this.btnSetDefaultFileNameFormat.Location = new System.Drawing.Point(642, 74);
             this.btnSetDefaultFileNameFormat.Name = "btnSetDefaultFileNameFormat";
             this.btnSetDefaultFileNameFormat.Size = new System.Drawing.Size(109, 23);
             this.btnSetDefaultFileNameFormat.TabIndex = 8;
@@ -490,7 +490,7 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxFileNameFormat.Location = new System.Drawing.Point(15, 76);
             this.textBoxFileNameFormat.Name = "textBoxFileNameFormat";
-            this.textBoxFileNameFormat.Size = new System.Drawing.Size(655, 20);
+            this.textBoxFileNameFormat.Size = new System.Drawing.Size(621, 20);
             this.textBoxFileNameFormat.TabIndex = 7;
             this.textBoxFileNameFormat.Leave += new System.EventHandler(this.textBoxFileNameFormat_Leave);
             // 
@@ -506,7 +506,7 @@ namespace Twitch_watchman
             // btnBrowseDownloadingDirectory
             // 
             this.btnBrowseDownloadingDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(744, 35);
+            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(710, 35);
             this.btnBrowseDownloadingDirectory.Name = "btnBrowseDownloadingDirectory";
             this.btnBrowseDownloadingDirectory.Size = new System.Drawing.Size(41, 23);
             this.btnBrowseDownloadingDirectory.TabIndex = 4;
@@ -520,7 +520,7 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxDownloadingDir.Location = new System.Drawing.Point(16, 37);
             this.textBoxDownloadingDir.Name = "textBoxDownloadingDir";
-            this.textBoxDownloadingDir.Size = new System.Drawing.Size(722, 20);
+            this.textBoxDownloadingDir.Size = new System.Drawing.Size(688, 20);
             this.textBoxDownloadingDir.TabIndex = 0;
             this.textBoxDownloadingDir.Leave += new System.EventHandler(this.textBoxDownloadingDir_Leave);
             // 

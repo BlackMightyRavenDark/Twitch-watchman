@@ -64,6 +64,17 @@ namespace Twitch_watchman
                 json["saveStreamInfo"] = config.SaveStreamInfo;
                 json["saveChunksInfo"] = config.SaveChunksInfo;
                 json["stopIfPlaylistLost"] = config.StopIfPlaylistLost;
+
+                JArray jaColumns = new JArray();
+                foreach (ColumnHeader column in listViewStreams.Columns)
+                {
+                    JObject jColumn = new JObject();
+                    jColumn["displayIndex"] = column.DisplayIndex;
+                    jColumn["width"] = column.Width;
+                    jaColumns.Add(jColumn);
+                }
+
+                json.Add(new JProperty("columns", jaColumns));
             };
             config.Loading += (s, json) =>
             {
@@ -149,6 +160,27 @@ namespace Twitch_watchman
                 if (jt != null)
                 {
                     config.StopIfPlaylistLost = jt.Value<bool>();
+                }
+
+                JArray jaColumns = json.Value<JArray>("columns");
+                if (jaColumns != null && jaColumns.Count > 0)
+                {
+                    for (int i = 0; i < jaColumns.Count; ++i)
+                    {
+                        JObject j = jaColumns[i] as JObject;
+                        int displayIndex = j.Value<int>("displayIndex");
+                        if (displayIndex < 0) { displayIndex = 0; }
+                        int columnWidth = j.Value<int>("width");
+                        if (columnWidth < 50) { columnWidth = 50; }
+
+                        listViewStreams.Columns[i].DisplayIndex = displayIndex;
+                        listViewStreams.Columns[i].Width = columnWidth;
+                    }
+
+                    if (columnHeaderChannelName.DisplayIndex != 0)
+                    {
+                        columnHeaderChannelName.DisplayIndex = 0;
+                    }
                 }
             };
             config.Load();
@@ -320,7 +352,6 @@ namespace Twitch_watchman
             ListViewItem item = new ListViewItem(streamItem.ChannelName);
             item.SubItems.Add(timerCheck.Enabled ? streamItem.TimerRemaining.ToString() : "Отключен!");
             item.SubItems.Add(streamItem.DumpingFilePath);
-            item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
@@ -911,6 +942,11 @@ namespace Twitch_watchman
 
         private void listViewStreams_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
         {
+            if (columnHeaderChannelName.DisplayIndex != 0)
+            {
+                columnHeaderChannelName.DisplayIndex = 0;
+            }
+
             try
             {
                 using (StringFormat sf = new StringFormat())

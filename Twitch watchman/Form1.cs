@@ -698,19 +698,16 @@ namespace Twitch_watchman
                 int maxPlaylistErrorCountInRow = config.StopIfPlaylistLost ? 1 : 5;
                 const int otherErrorCountInRow = 5;
 
-                Task.Run(() =>
-                {
-                    ChannelChecker checker = new ChannelChecker(streamItem, config.SaveStreamInfo);
-                    checker.Check(OnChannelCheckingStarted, OnNewLiveDetected,
-                        OnPlaylistUrlDetected, OnPlaylistFirstArrived, null, null,
-                        OnDumpingStarted, OnDumpingProgress, OnChannelCheckingCompleted,
-                        OnTitleDetected, OnTitleChanged, OnLogMessage,
-                        OnPlaylistCheckingStarted, OnPlaylistCheckingCompleted,
-                        OnPlaylistCheckingDelayCalculated, OnNextChunkArrived, null,
-                        null, null, null, null, OnDumpingFinished, OnUpdateErrors,
-                        playlistCheckingIntervalMilliseconds, saveChunksInfo,
-                        maxPlaylistErrorCountInRow, otherErrorCountInRow);
-                });
+                ChannelChecker checker = new ChannelChecker(streamItem, config.SaveStreamInfo);
+                checker.Check(OnChannelCheckingStarted, OnNewLiveDetected,
+                    OnPlaylistUrlDetected, OnPlaylistFirstArrived, null, null,
+                    OnDumpingStarted, OnDumpingProgress, OnChannelCheckingCompleted,
+                    OnTitleDetected, OnTitleChanged, OnLogMessage,
+                    OnPlaylistCheckingStarted, OnPlaylistCheckingCompleted,
+                    OnPlaylistCheckingDelayCalculated, OnNextChunkArrived, null,
+                    null, null, null, null, OnDumpingFinished, OnUpdateErrors,
+                    playlistCheckingIntervalMilliseconds, saveChunksInfo,
+                    maxPlaylistErrorCountInRow, otherErrorCountInRow);
             }
         }
 
@@ -747,11 +744,7 @@ namespace Twitch_watchman
 
         private void OnChannelCheckingStarted(object sender)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnChannelCheckingStarted(sender); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -759,16 +752,12 @@ namespace Twitch_watchman
                 {
                     listViewStreams.Items[id].SubItems[COLUMN_ID_TIMER].Text = "Проверка...";
                 }
-            }
+            }));
         }
 
         private void OnPlaylistFirstArrived(object sender, int chunkCount, int firstChunkId)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnPlaylistFirstArrived(sender, chunkCount, firstChunkId); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -776,16 +765,12 @@ namespace Twitch_watchman
                 {
                     listViewStreams.Items[id].SubItems[COLUMN_ID_FIRSTCHUNKID].Text = firstChunkId.ToString();
                 }
-            }
+            }));
         }
 
         private void OnNewLiveDetected(object sender)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnNewLiveDetected(sender); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 notifyIcon1.BalloonTipTitle = "СТРИИИИИИМ!!!!!!!";
@@ -794,29 +779,21 @@ namespace Twitch_watchman
                 notifyIcon1.ShowBalloonTip(5000);
 
                 AddToLog(streamItem.ChannelName, "Новая трансляция!");
-            }
+            }));
         }
 
         private void OnTitleDetected(object sender, string title)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnTitleDetected(sender, title); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 AddToLog(streamItem.ChannelName, $"Название стрима: {title}");
-            }
+            }));
         }
 
         private void OnPlaylistUrlDetected(object sender, string playlistUrl)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnPlaylistUrlDetected(sender, playlistUrl); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -824,16 +801,12 @@ namespace Twitch_watchman
                 {
                     listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLIST_URL].Text = playlistUrl;
                 }
-            }
+            }));
         }
 
         public void OnPlaylistCheckingStarted(object sender, string playlistUrl)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnPlaylistCheckingStarted(sender, playlistUrl); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -841,23 +814,14 @@ namespace Twitch_watchman
                 {
                     listViewStreams.Items[id].SubItems[COLUMN_ID_STATUS].Text = "Плейлист проверяется...";
                 }
-            }
+            }));
         }
 
         public void OnPlaylistCheckingCompleted(object sender,
             int chunkCount, int newChunkCount, int firstChunkId, int firstNewChunkId,
             string playlistContent, int errorCode, int playlistErrorCountInRow)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate
-                {
-                    OnPlaylistCheckingCompleted(sender, chunkCount, newChunkCount,
-                        firstChunkId, firstNewChunkId, playlistContent,
-                        errorCode, playlistErrorCountInRow);
-                });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -880,21 +844,13 @@ namespace Twitch_watchman
                         listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKURL].Text = null;
                     }
                 }
-            }
+            }));
         }
 
         public void OnPlaylistCheckingDelayCalculated(object sender,
             int delay, int checkingInterval, int cycleProcessingTime)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate
-                {
-                    OnPlaylistCheckingDelayCalculated(sender,
-                        delay, checkingInterval, cycleProcessingTime);
-                });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -903,16 +859,12 @@ namespace Twitch_watchman
                     listViewStreams.Items[id].SubItems[COLUMN_ID_DELAY].Text =
                         $"{delay}ms / {checkingInterval}ms";
                 }
-            }
+            }));
         }
 
         private void OnTitleChanged(object sender)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnTitleChanged(sender); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
 
@@ -925,16 +877,12 @@ namespace Twitch_watchman
                 }
 
                 AddToLog(streamItem.ChannelName, $"Новое название стрима: {streamItem.Title}");
-            }
+            }));
         }
 
         private void OnDumpingStarted(object sender, int errorCode)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnDumpingStarted(sender, errorCode); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -961,16 +909,12 @@ namespace Twitch_watchman
                         ResetItem(streamItem);
                     }
                 }
-            }
+            }));
         }
 
         private void OnDumpingProgress(object sender, long fileSize, int errorCode)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnDumpingProgress(sender, fileSize, errorCode); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -979,21 +923,13 @@ namespace Twitch_watchman
                     listViewStreams.Items[id].SubItems[COLUMN_ID_FILESIZE].Text = FormatSize(fileSize);
                     listViewStreams.Items[id].SubItems[COLUMN_ID_STATUS].Text = "Дампинг...";
                 }
-            }
+            }));
         }
 
         public void OnNextChunkArrived(object sender, StreamSegment chunk,
             long chunkSize, int sessionChunkId, int chunkProcessingTime)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate
-                {
-                    OnNextChunkArrived(sender, chunk, chunkSize,
-                        sessionChunkId, chunkProcessingTime);
-                });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -1024,16 +960,12 @@ namespace Twitch_watchman
                         listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKURL].Text = "null";
                     }
                 }
-            }
+            }));
         }
 
         private void OnDumpingFinished(object sender, int errorCode)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnDumpingFinished(sender, errorCode); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -1061,16 +993,12 @@ namespace Twitch_watchman
                             streamItem.Dumper.LostChunkCount.ToString();
                     }
                 }
-            }
+            }));
         }
 
         private void OnChannelCheckingCompleted(object sender, int errorCode)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnChannelCheckingCompleted(sender, errorCode); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -1095,20 +1023,16 @@ namespace Twitch_watchman
                 }
 
                 streamItem.IsChecking = false;
-            }
+            }));
         }
 
         private void OnLogMessage(object sender, string messageText)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate { OnLogMessage(sender, messageText); });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 AddToLog(streamItem.ChannelName, messageText);
-            }
+            }));
         }
 
         private void OnUpdateErrors(object sender,
@@ -1117,16 +1041,7 @@ namespace Twitch_watchman
             int chunkDownloadErrorCount, int chunkAppendErrorCount,
             int lostChunkCount)
         {
-            if (InvokeRequired)
-            {
-                Invoke((MethodInvoker)delegate
-                {
-                    OnUpdateErrors(sender, playlistErrorCountInRow, playlistErrorCountInRowMax,
-                        otherErrorCountInRow, otherErrorCountInRowMax,
-                        chunkDownloadErrorCount, chunkAppendErrorCount, lostChunkCount);
-                });
-            }
-            else
+            Invoke(new MethodInvoker(() =>
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 int id = FindStreamItemInListView(streamItem, listViewStreams);
@@ -1143,7 +1058,7 @@ namespace Twitch_watchman
                     listViewStreams.Items[id].SubItems[COLUMN_ID_LOSTCHUNKS].Text =
                         lostChunkCount.ToString();
                 }
-            }
+            }));
         }
 
         private void StopAll()

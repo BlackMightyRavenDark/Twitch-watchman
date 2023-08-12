@@ -254,9 +254,10 @@ namespace Twitch_watchman
                         string dateFormatted = DateTime.Now.ToString("yyyy.MM.dd, HH:mm:ss");
                         if (string.IsNullOrEmpty(StreamItem.DumpingFilePath))
                         {
-                            StreamItem.DumpingFilePath =
-                                Path.GetFileNameWithoutExtension(FormatFileName(FILENAME_FORMAT_DEFAULT, StreamItem)) +
-                                $"_{StreamItem.DateLocal:yyyy-MM-dd, HH-mm-ss_ffff}.ts";
+                            string fn = FormatFileName(FILENAME_FORMAT_DEFAULT, StreamItem);
+                            string dateFileName = StreamItem.DateLocal.ToString("yyyy-MM-dd, HH-mm-ss_ffff");
+                            string fullFilePath = Path.Combine(downloadingDirPath, $"{fn}_{dateFileName}");
+                            StreamItem.DumpingFilePath = GetNumberedFileName(fullFilePath);
                         }
                         string titlesFp = StreamItem.DumpingFilePath + "_titles.txt";
                         File.AppendAllText(titlesFp, $"{dateFormatted}={newTitle}{Environment.NewLine}");

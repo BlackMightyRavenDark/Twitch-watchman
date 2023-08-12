@@ -1,20 +1,20 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using MultiThreadedDownloaderLib;
 using HlsDumpLib;
 using static HlsDumpLib.HlsDumper;
 using static Twitch_watchman.Utils;
-using System.Threading.Tasks;
 
 namespace Twitch_watchman
 {
     public sealed class ChannelChecker
     {
-        public StreamItem StreamItem { get; private set; }
+        public StreamItem StreamItem { get; }
         public int LastErrorCode { get; private set; }
         public string LastErrorMessage { get; private set; }
-        private bool SaveStreamInfo { get; set; }
+        private bool SaveStreamInfo { get; }
 
         public const int ERROR_PARSE = -2000;
 
@@ -133,7 +133,8 @@ namespace Twitch_watchman
                 {
                     StreamItem.DateServer = newStreamDate;
                     StreamItem.DateLocal = DateTime.Now;
-                    string filePath = downloadingDirPath + FormatFileName(fileNameFormat, StreamItem);
+                    string filePath = Path.Combine(downloadingDirPath,
+                        FormatFileName(fileNameFormat, StreamItem));
                     StreamItem.DumpingFilePath = GetNumberedFileName(filePath);
                     StreamItem.DumpingFileSize = 0L;
                     newLiveDetected?.Invoke(this);

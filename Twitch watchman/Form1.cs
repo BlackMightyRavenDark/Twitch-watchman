@@ -47,7 +47,7 @@ namespace Twitch_watchman
         {
             ServicePointManager.DefaultConnectionLimit = 100;
 
-            config = new MainConfiguration();
+            config = new Configurator();
             config.Saving += (s, json) =>
             {
                 if (WindowState == FormWindowState.Normal)

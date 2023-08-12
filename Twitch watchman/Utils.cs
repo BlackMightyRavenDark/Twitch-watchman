@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
 using MultiThreadedDownloaderLib;
-using HlsDumpLib;
 
 namespace Twitch_watchman
 {
@@ -18,7 +17,7 @@ namespace Twitch_watchman
         public const int MAX_LOG_COUNT = 1000;
 
         public static List<string> channelNames = new List<string>();
-        public static MainConfiguration config;
+        internal static Configurator config;
 
         public const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0";
 
@@ -195,86 +194,6 @@ namespace Twitch_watchman
                 System.Diagnostics.Debug.WriteLine(ex.Message);
                 return null;
             }
-        }
-    }
-
-    public sealed class MainConfiguration
-    {
-        public string SelfDirPath { get; private set; }
-        public string FilePath { get; private set; }
-        public string DownloadingDirPath { get; set; }
-        public string FileNameFormat { get; set; }
-        public string ChannelListFilePath { get; set; }
-        public bool SaveStreamInfo { get; set; }
-        public bool SaveChunksInfo { get; set; }
-        public bool StopIfPlaylistLost { get; set; }
-        public int CheckingIntervalInactive { get; set; }
-        public int CheckingIntervalActive { get; set; }
-
-        public delegate void SavingDelegate(object sender, JObject root);
-        public delegate void LoadingDelegate(object sender, JObject root);
-        public SavingDelegate Saving;
-        public LoadingDelegate Loading;
-
-        public MainConfiguration()
-        {
-            SelfDirPath = Path.GetDirectoryName(Application.ExecutablePath) + "\\";
-            FilePath = SelfDirPath + "tw_config.json";
-            LoadDefaults();
-        }
-
-        public void LoadDefaults()
-        {
-            ChannelListFilePath = SelfDirPath + "tw_channelList.json";
-            DownloadingDirPath = SelfDirPath;
-            FileNameFormat = Utils.FILENAME_FORMAT_DEFAULT;
-            SaveStreamInfo = true;
-            SaveChunksInfo = true;
-            StopIfPlaylistLost = true;
-            CheckingIntervalInactive = 3;
-            CheckingIntervalActive = 10;
-        }
-
-        public void Load()
-        {
-            LoadDefaults();
-            if (File.Exists(FilePath))
-            {
-                JObject json = Utils.TryParseJson(File.ReadAllText(FilePath));
-                if (json != null && Loading != null) { Loading.Invoke(this, json); }
-            }
-        }
-
-        public void Save()
-        {
-            JObject json = new JObject();
-            Saving?.Invoke(this, json);
-            if (File.Exists(FilePath))
-            {
-                File.Delete(FilePath);
-            }
-            File.WriteAllText(FilePath, json.ToString());
-        }
-    }
-
-    public sealed class StreamItem
-    {
-        public string ChannelName { get; private set; }
-        public string PlaylistUrl { get; set; }
-        public string DumpingFilePath { get; set; } = null;
-        public long DumpingFileSize { get; set; } = -1L;
-        public bool IsChecking { get; set; } = false;
-        public int TimerRemaining { get; set; } = 10;
-        public string Title { get; set; }
-        public DateTime DateServer { get; set; } = DateTime.MinValue;
-        public DateTime DateLocal { get; set; } = DateTime.MinValue;
-        public bool IsImportant { get; set; } = false;
-        public bool IsStreamActive => Dumper != null;
-        public HlsDumper Dumper { get; set; }
-
-        public StreamItem(string channelName)
-        {
-            ChannelName = channelName;
         }
     }
 }

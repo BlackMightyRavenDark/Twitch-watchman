@@ -33,8 +33,9 @@ namespace Twitch_watchman
         private const int COLUMN_ID_CHUNKAPPENDERRORS = 17;
         private const int COLUMN_ID_OTHERERRORS = 18;
         private const int COLUMN_ID_DUMPSTARTDATE = 19;
-        private const int COLUMN_ID_STATUS = 20;
-        private const int COLUMN_ID_PLAYLIST_URL = 21;
+        private const int COLUMN_ID_STREAMTITLE = 20;
+        private const int COLUMN_ID_STATUS = 21;
+        private const int COLUMN_ID_PLAYLIST_URL = 22;
 
         private bool _isClosing = false;
 
@@ -645,6 +646,7 @@ namespace Twitch_watchman
             item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
             item.SubItems.Add(string.Empty);
+            item.SubItems.Add(string.Empty);
             item.SubItems.Add("Остановлено");
             item.SubItems.Add(string.Empty);
             item.Tag = streamItem;
@@ -681,6 +683,7 @@ namespace Twitch_watchman
                 listViewStreams.Items[id].SubItems[COLUMN_ID_CHUNKAPPENDERRORS].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_OTHERERRORS].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_DUMPSTARTDATE].Text = null;
+                listViewStreams.Items[id].SubItems[COLUMN_ID_STREAMTITLE].Text = null;
                 listViewStreams.Items[id].SubItems[COLUMN_ID_STATUS].Text = "Остановлено";
                 listViewStreams.Items[id].SubItems[COLUMN_ID_PLAYLIST_URL].Text = null;
             }
@@ -788,6 +791,12 @@ namespace Twitch_watchman
             {
                 StreamItem streamItem = (sender as ChannelChecker).StreamItem;
                 AddToLog(streamItem.ChannelName, $"Название стрима: {title}");
+
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
+                {
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_STREAMTITLE].Text = title;
+                }
             }));
         }
 
@@ -874,6 +883,12 @@ namespace Twitch_watchman
                     notifyIcon1.BalloonTipText = $"Изменилось название: {streamItem.Title}";
                     notifyIcon1.BalloonTipIcon = ToolTipIcon.Info;
                     notifyIcon1.ShowBalloonTip(5000);
+                }
+
+                int id = FindStreamItemInListView(streamItem, listViewStreams);
+                if (id >= 0)
+                {
+                    listViewStreams.Items[id].SubItems[COLUMN_ID_STREAMTITLE].Text = streamItem.Title;
                 }
 
                 AddToLog(streamItem.ChannelName, $"Новое название стрима: {streamItem.Title}");

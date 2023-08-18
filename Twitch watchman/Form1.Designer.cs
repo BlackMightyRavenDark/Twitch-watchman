@@ -94,6 +94,7 @@ namespace Twitch_watchman
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
             this.miStopDumpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.columnHeaderStreamTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -161,6 +162,7 @@ namespace Twitch_watchman
             this.columnHeaderChunkAppendErrors,
             this.columnHeaderOtherErrors,
             this.columnHeaderDumpStartedDate,
+            this.columnHeaderStreamTitle,
             this.columnHeaderStatus,
             this.columnHeaderPlaylistUrl});
             this.listViewStreams.FullRowSelect = true;
@@ -387,7 +389,7 @@ namespace Twitch_watchman
             this.groupBox3.Controls.Add(this.label5);
             this.groupBox3.Location = new System.Drawing.Point(3, 114);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(740, 81);
+            this.groupBox3.Size = new System.Drawing.Size(723, 81);
             this.groupBox3.TabIndex = 6;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Частота проверки";
@@ -468,7 +470,7 @@ namespace Twitch_watchman
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Location = new System.Drawing.Point(3, 3);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(740, 105);
+            this.groupBox2.Size = new System.Drawing.Size(723, 105);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Файлы и папки";
@@ -476,7 +478,7 @@ namespace Twitch_watchman
             // btnSetDefaultFileNameFormat
             // 
             this.btnSetDefaultFileNameFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSetDefaultFileNameFormat.Location = new System.Drawing.Point(625, 74);
+            this.btnSetDefaultFileNameFormat.Location = new System.Drawing.Point(608, 74);
             this.btnSetDefaultFileNameFormat.Name = "btnSetDefaultFileNameFormat";
             this.btnSetDefaultFileNameFormat.Size = new System.Drawing.Size(109, 23);
             this.btnSetDefaultFileNameFormat.TabIndex = 8;
@@ -490,7 +492,7 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxFileNameFormat.Location = new System.Drawing.Point(15, 76);
             this.textBoxFileNameFormat.Name = "textBoxFileNameFormat";
-            this.textBoxFileNameFormat.Size = new System.Drawing.Size(604, 20);
+            this.textBoxFileNameFormat.Size = new System.Drawing.Size(587, 20);
             this.textBoxFileNameFormat.TabIndex = 7;
             this.textBoxFileNameFormat.Leave += new System.EventHandler(this.textBoxFileNameFormat_Leave);
             // 
@@ -506,7 +508,7 @@ namespace Twitch_watchman
             // btnBrowseDownloadingDirectory
             // 
             this.btnBrowseDownloadingDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(693, 35);
+            this.btnBrowseDownloadingDirectory.Location = new System.Drawing.Point(676, 35);
             this.btnBrowseDownloadingDirectory.Name = "btnBrowseDownloadingDirectory";
             this.btnBrowseDownloadingDirectory.Size = new System.Drawing.Size(41, 23);
             this.btnBrowseDownloadingDirectory.TabIndex = 4;
@@ -520,7 +522,7 @@ namespace Twitch_watchman
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxDownloadingDir.Location = new System.Drawing.Point(16, 37);
             this.textBoxDownloadingDir.Name = "textBoxDownloadingDir";
-            this.textBoxDownloadingDir.Size = new System.Drawing.Size(671, 20);
+            this.textBoxDownloadingDir.Size = new System.Drawing.Size(654, 20);
             this.textBoxDownloadingDir.TabIndex = 0;
             this.textBoxDownloadingDir.Leave += new System.EventHandler(this.textBoxDownloadingDir_Leave);
             // 
@@ -604,74 +606,79 @@ namespace Twitch_watchman
             this.toolStripMenuItem2,
             this.miStopDumpToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(289, 208);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(261, 192);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // miCheckChannelToolStripMenuItem
             // 
             this.miCheckChannelToolStripMenuItem.Name = "miCheckChannelToolStripMenuItem";
-            this.miCheckChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miCheckChannelToolStripMenuItem.Size = new System.Drawing.Size(260, 22);
             this.miCheckChannelToolStripMenuItem.Text = "Проверить";
             this.miCheckChannelToolStripMenuItem.Click += new System.EventHandler(this.miCheckChannelToolStripMenuItem_Click);
             // 
             // miEditChannelToolStripMenuItem
             // 
             this.miEditChannelToolStripMenuItem.Name = "miEditChannelToolStripMenuItem";
-            this.miEditChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miEditChannelToolStripMenuItem.Size = new System.Drawing.Size(260, 22);
             this.miEditChannelToolStripMenuItem.Text = "Редактировать";
             this.miEditChannelToolStripMenuItem.Click += new System.EventHandler(this.miEditChannelToolStripMenuItem_Click);
             // 
             // miRemoveChannelToolStripMenuItem
             // 
             this.miRemoveChannelToolStripMenuItem.Name = "miRemoveChannelToolStripMenuItem";
-            this.miRemoveChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miRemoveChannelToolStripMenuItem.Size = new System.Drawing.Size(260, 22);
             this.miRemoveChannelToolStripMenuItem.Text = "Удалить";
             this.miRemoveChannelToolStripMenuItem.Click += new System.EventHandler(this.miRemoveChannelToolStripMenuItem_Click);
             // 
             // miCopyChannelNameToolStripMenuItem
             // 
             this.miCopyChannelNameToolStripMenuItem.Name = "miCopyChannelNameToolStripMenuItem";
-            this.miCopyChannelNameToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miCopyChannelNameToolStripMenuItem.Size = new System.Drawing.Size(260, 22);
             this.miCopyChannelNameToolStripMenuItem.Text = "Скопировать название канала";
             this.miCopyChannelNameToolStripMenuItem.Click += new System.EventHandler(this.miCopyChannelNameToolStripMenuItem_Click);
             // 
             // miCopyPlaylistUrlToolStripMenuItem
             // 
             this.miCopyPlaylistUrlToolStripMenuItem.Name = "miCopyPlaylistUrlToolStripMenuItem";
-            this.miCopyPlaylistUrlToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miCopyPlaylistUrlToolStripMenuItem.Size = new System.Drawing.Size(260, 22);
             this.miCopyPlaylistUrlToolStripMenuItem.Text = "Скопировать ссылку на плейлист";
             this.miCopyPlaylistUrlToolStripMenuItem.Click += new System.EventHandler(this.miCopyPlaylistUrlToolStripMenuItem_Click);
             // 
             // miOpenChannelToolStripMenuItem
             // 
             this.miOpenChannelToolStripMenuItem.Name = "miOpenChannelToolStripMenuItem";
-            this.miOpenChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miOpenChannelToolStripMenuItem.Size = new System.Drawing.Size(260, 22);
             this.miOpenChannelToolStripMenuItem.Text = "Открыть канал";
             this.miOpenChannelToolStripMenuItem.Click += new System.EventHandler(this.miOpenChannelToolStripMenuItem_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(285, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(257, 6);
             // 
             // miImportantChannelToolStripMenuItem
             // 
             this.miImportantChannelToolStripMenuItem.Name = "miImportantChannelToolStripMenuItem";
-            this.miImportantChannelToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miImportantChannelToolStripMenuItem.Size = new System.Drawing.Size(260, 22);
             this.miImportantChannelToolStripMenuItem.Text = "Важный канал";
             this.miImportantChannelToolStripMenuItem.Click += new System.EventHandler(this.miImportantChannelToolStripMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(285, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(257, 6);
             // 
             // miStopDumpToolStripMenuItem
             // 
             this.miStopDumpToolStripMenuItem.Name = "miStopDumpToolStripMenuItem";
-            this.miStopDumpToolStripMenuItem.Size = new System.Drawing.Size(288, 24);
+            this.miStopDumpToolStripMenuItem.Size = new System.Drawing.Size(260, 22);
             this.miStopDumpToolStripMenuItem.Text = "Остановить дампинг";
             this.miStopDumpToolStripMenuItem.Click += new System.EventHandler(this.miStopDumpToolStripMenuItem_Click);
+            // 
+            // columnHeaderStreamTitle
+            // 
+            this.columnHeaderStreamTitle.Text = "Название стрима";
+            this.columnHeaderStreamTitle.Width = 100;
             // 
             // Form1
             // 
@@ -769,5 +776,6 @@ namespace Twitch_watchman
         private System.Windows.Forms.ColumnHeader columnHeaderChunkUrl;
         private System.Windows.Forms.ColumnHeader columnHeaderChunkDownloadErrors;
         private System.Windows.Forms.ColumnHeader columnHeaderChunkAppendErrors;
+        private System.Windows.Forms.ColumnHeader columnHeaderStreamTitle;
     }
 }

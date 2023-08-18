@@ -1037,6 +1037,8 @@ namespace Twitch_watchman
                         timerCheck.Enabled ? streamItem.TimerRemaining.ToString() : "Отключен!";
                 }
 
+                if (_isClosing) { streamItem.Dumper?.StopDumping(); }
+
                 streamItem.IsChecking = false;
             }));
         }
@@ -1090,7 +1092,7 @@ namespace Twitch_watchman
             foreach (ListViewItem listViewItem in listViewStreams.Items)
             {
                 StreamItem streamItem = listViewItem.Tag as StreamItem;
-                if (streamItem.IsStreamActive) { return true; }
+                if (streamItem.IsStreamActive || streamItem.IsChecking) { return true; }
             }
             return false;
         }
